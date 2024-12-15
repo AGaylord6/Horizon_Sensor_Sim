@@ -155,16 +155,12 @@ def orient_towards(source, target, ram):
     Orient source object towards target using quaternion rotation
         Bases direction of up upon direction of travel (ram)
         Adjusts orientation so the object points towards the horizon (Earth's surface)
-        Bases direction of up upon direction of travel (ram)
-        Adjusts orientation so the object points towards the horizon (Earth's surface)
     '''
 
-    # Get position of two objects (source and target)
     # Get position of two objects (source and target)
     source_pos = cmds.xform(source, q=True, ws=True, t=True)
     target_pos = cmds.xform(target, q=True, ws=True, t=True)
 
-    # Calculate direction vector from source to target
     # Calculate direction vector from source to target
     vector = om.MVector(target_pos[0] - source_pos[0],
                         target_pos[1] - source_pos[1],
@@ -175,26 +171,19 @@ def orient_towards(source, target, ram):
     print("Normalized direction to face (ram): ", up_dir)
 
     # Cross product to calculate the right vector (perpendicular to forward and up)
-    # Cross product to calculate the right vector (perpendicular to forward and up)
     right = vector ^ up_dir
     right.normalize()
 
-    # Recompute the 'up' vector to make sure it's perpendicular to both the 'vector' and 'right'
     # Recompute the 'up' vector to make sure it's perpendicular to both the 'vector' and 'right'
     up_dir = right ^ vector
     up_dir.normalize()
 
     # Create the quaternion rotation matrix
-    # Create the quaternion rotation matrix
     quat_matrix = om.MMatrix([right.x, right.y, right.z, 0,
                               up_dir.x, up_dir.y, up_dir.z, 0,
                               -vector.x, -vector.y, -vector.z, 0,
                               0, 0, 0, 1])
-                              up_dir.x, up_dir.y, up_dir.z, 0,
-                              -vector.x, -vector.y, -vector.z, 0,
-                              0, 0, 0, 1])
 
-    # Convert the rotation matrix to Euler angles
     # Convert the rotation matrix to Euler angles
     transform = om.MTransformationMatrix(quat_matrix)
     eulers = transform.rotation(om.MEulerRotation.kXYZ)
@@ -223,19 +212,6 @@ def orient_towards(source, target, ram):
     angle_y = om.MAngle(eulers.y).asDegrees()
     print("new angle_x: ", new_angle_x)
 
-    # We now calculate the new angle to make the object face the horizon while still facing the target
-    new_angle_x = om.MAngle(eulers.x).asDegrees()
-
-    # We can adjust the angle along the X-axis based on the tangent to the horizon
-    new_angle_x += angle_degrees
-
-    # Apply the final rotation to source object based on calculated Euler angles
-    angle_y = om.MAngle(eulers.y).asDegrees()
-    print("new angle_x: ", new_angle_x)
-
-    # Apply the transformation to the source object
-    mc.xform(source, rotation=(new_angle_x,
-                                angle_y,
     # Apply the transformation to the source object
     mc.xform(source, rotation=(new_angle_x,
                                 angle_y,
