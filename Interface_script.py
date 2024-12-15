@@ -11,7 +11,6 @@ Uses IrishSat's Python Simulated Orbital Library (PySOL) to find orbit
 Rendered images are created in selected project folder -> images
 '''
 
-
 import maya.cmds as mc
 import maya.api.OpenMaya as om
 
@@ -42,8 +41,6 @@ default_oe = [0, earth_radius + 450, 0.0000922, 90, 90, 0]
 total_time = 1.6
 # timestep between points (seconds)
 timestep = 60
-file_name = "orbit1.csv"
-store_data = False
 # option to only highlight orbit path with new cams + images
 cubes_path_no_cams = False
 render_image = False
@@ -155,6 +152,8 @@ def orient_towards(source, target, ram):
     Orient source object towards target using quaternion rotation
         Bases direction of up upon direction of travel (ram)
         Adjusts orientation so the object points towards the horizon (Earth's surface)
+
+    TODO: add more options to specify what tilt our cameras are mounted at instead of calculating ideal every time
     '''
 
     # Get position of two objects (source and target)
@@ -225,13 +224,14 @@ def main(oe):
     '''
     # get gps data in ecef frame from python orbital simulated library
     # also get ram velocity vector for each step (km/s)
-    B_field, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, total_time, timestep, file_name, store_data, True, True)
+    B_field, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, total_time, timestep, None, False, True, True)
     # B_field, gps = PySOL.sol_sim.get_orbit_data(file_name, generate_GPS)
     gps = gps * .001
     ram = ram * .001
 
     for i, element in enumerate(gps):
         if cubes_path_no_cams:
+            # generate cubes that show orbit
             mc.polyCube(name = "orbit" + str(i))
             mc.move(element[0], element[1], element[2])
             mc.scale(.3,.3,.3)
@@ -253,7 +253,7 @@ def main(oe):
             # Set the focal length for the camera
             cmds.setAttr(f'{last}.focalLength', focal_length)
             
-            # orient towards the horizon (with respect to RAM)
+            # orient towards the horizon (with respect to RAM) and point towards horizon
             orient_towards(last, earth_object, ram[i])
 
     if render_image:
