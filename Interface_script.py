@@ -2,7 +2,8 @@
 Interface_script.py
 Author: Andrew Gaylord
 
-Maya Python script that simulates earth horizon sensor images
+Maya Python script that simulates earth horizon sensor images taken from a satellite in Low Earth Orbit (LEO)
+
 Uses IrishSat's Python Simulated Orbital Library (PySOL) to find orbit
     https://github.com/ND-IrishSat/PySOL
     Must clone to documents/maya/scripts
@@ -43,10 +44,13 @@ total_time = 1.6
 timestep = 60
 # option to only highlight orbit path with new cams + images
 cubes_path_no_cams = False
-render_image = False
+render_image = True
+two_cams = True
+# whether our cams should be tilted and not ram pointed
+ideal = False
 # whether to render as color cam or ir cam (hides correct group)
-IR_cam = False
-# how many EHS images to create (roughly, depends on timestep)
+IR_cam = True
+# how many pairs of EHS images to create (roughly, depends on timestep)
 pic_count = 20
 # how often to space cams along orbit
 pic_interval = int(total_time * 3600 / timestep / pic_count)
@@ -60,6 +64,9 @@ else:
 # sensor width (in mm) and desired FOV
 cam_FOV = 70.0
 sensor_width = 34.0
+# angle at which our cams are mounted (degrees)
+# with respect to axis want to nadir point
+cam_mount_angle = 65
 # array to store all camera objects created
 cam_objects = []
 earth_object = "earth"
@@ -147,7 +154,7 @@ def create_gui(default_oe):
     mc.showWindow(window_name)
 
 
-def orient_towards(source, target, ram):
+def orient_towards(source, target, ram, second=None):
     '''
     Orient source object towards target using quaternion rotation
         Bases direction of up upon direction of travel (ram)
@@ -155,6 +162,11 @@ def orient_towards(source, target, ram):
 
     TODO: add more options to specify what tilt our cameras are mounted at instead of calculating ideal every time
     '''
+
+    if not ideal:
+        tilt = np.random.normal(0, .5, 9)
+    else:
+        tilt = np.array([0, 0, 0])
 
     # Get position of two objects (source and target)
     source_pos = cmds.xform(source, q=True, ws=True, t=True)
@@ -177,10 +189,10 @@ def orient_towards(source, target, ram):
     up_dir = right ^ vector
     up_dir.normalize()
 
-    # Create the quaternion rotation matrix
-    quat_matrix = om.MMatrix([right.x, right.y, right.z, 0,
-                              up_dir.x, up_dir.y, up_dir.z, 0,
-                              -vector.x, -vector.y, -vector.z, 0,
+    # Create the quaternion rotation matrix for first cam (adding random tilt)
+    quat_matrix = om.MMatrix([right.x + tilt[0], right.y + tilt[1], right.z + tilt[2], 0,
+                              up_dir.x + tilt[3], up_dir.y + tilt[4], up_dir.z + tilt[5], 0,
+                              -vector.x + tilt[6], -vector.y + tilt[7], -vector.z + tilt[8], 0,
                               0, 0, 0, 1])
 
     # Convert the rotation matrix to Euler angles
@@ -193,28 +205,50 @@ def orient_towards(source, target, ram):
     dz = source_pos[2]
     d = math.sqrt(dx**2 + dy**2 + dz**2)
 
-    # Calculate the angle from the Earth's center to the object's position
-    theta_center_to_X = math.acos((earth_radius * .001) / d) 
-    # Angle of the line connecting the center to the tangent plane
-    tangent_angle = math.pi / 2 - theta_center_to_X  
+    if not cam_mount_angle:
+        # Calculate the angle from the Earth's center to the object's position
+        theta_center_to_X = math.acos((earth_radius * .001) / d) 
+        # Angle of the line connecting the center to the tangent plane
+        tangent_angle = math.pi / 2 - theta_center_to_X  
+    
+        # Convert the angle to the tangent line to degrees
+        # this is the ideal angle our cams would be pointed to directly point at horizon
+        angle_degrees = math.degrees(tangent_angle)
+    else:
+        # record the angle that our cams are mounted at
+        angle_degrees = cam_mount_angle
 
-    # Convert the angle to degrees
-    angle_degrees = math.degrees(tangent_angle)
-
-    # We now calculate the new angle to make the object face the horizon while still facing the target
-    new_angle_x = om.MAngle(eulers.x).asDegrees()
-
-    # We can adjust the angle along the X-axis based on the tangent to the horizon
-    new_angle_x += angle_degrees
-
-    # Apply the final rotation to source object based on calculated Euler angles
-    angle_y = om.MAngle(eulers.y).asDegrees()
+    # adjust the x axis so that the object faces the horizon while still facing ram
+    new_angle_x = om.MAngle(eulers.x).asDegrees() + angle_degrees
     print("new angle_x: ", new_angle_x)
 
     # Apply the transformation to the source object
     mc.xform(source, rotation=(new_angle_x,
-                                angle_y,
+                                om.MAngle(eulers.y).asDegrees(),
                                 om.MAngle(eulers.z).asDegrees()), worldSpace=True)
+
+    if second:
+        # set up direction facing opposite direction as ram
+        up_dir = om.MVector(-ram[0], -ram[1], -ram[2]).normalize()
+        right = vector ^ up_dir
+        right.normalize()
+        up_dir = right ^ vector
+        up_dir.normalize()
+        # quat matrix for second cam (subtracting the tilt so it goes opposite way)
+        quat_matrix_second = om.MMatrix([right.x - tilt[0], right.y - tilt[1], right.z - tilt[2], 0,
+                                up_dir.x - tilt[3], up_dir.y - tilt[4], up_dir.z - tilt[5], 0,
+                                -vector.x + tilt[6], -vector.y + tilt[7], -vector.z + tilt[8], 0,
+                                0, 0, 0, 1])
+    
+        # Convert the rotation matrix to Euler angles
+        transform = om.MTransformationMatrix(quat_matrix_second)
+        eulers = transform.rotation(om.MEulerRotation.kXYZ)
+        # add horizon angle for second cam
+        new_angle_x = om.MAngle(eulers.x).asDegrees() + angle_degrees
+    
+        mc.xform(second, rotation=(new_angle_x,
+                                    om.MAngle(eulers.y).asDegrees(),
+                                    om.MAngle(eulers.z).asDegrees()), worldSpace=True)
 
 
 def main(oe):
@@ -238,23 +272,44 @@ def main(oe):
 
         # only create a camera object every so often
         if i % pic_interval == 0 and not cubes_path_no_cams:
+            # direction that our cam should be oriented
+            if ideal:
+                direction = ram[i]
+            else:
+                # to simulate non-ram pointing, pick a random direction to orient ourselves towards
+                direction = np.random.randn(3)
+                direction = direction / np.linalg.norm(direction)
+                direction = ram[i]
+
             # create camera and move to current GPS
             mc.camera(name = "ehs")
             mc.move(element[0], element[1], element[2])
 
             # get created object (name not setting correctly for some reason)
-            last = mc.ls(sl=True)[0]
+            first_cam = mc.ls(sl=True)[0]
             # add to our list to render later
-            cam_objects.append(last)
+            cam_objects.append(first_cam)
             # set the FOV of the camera
             # Convert FOV to focal length
             fov_radians = math.radians(cam_FOV)
             focal_length = sensor_width / (2 * math.tan(fov_radians / 2))
             # Set the focal length for the camera
-            cmds.setAttr(f'{last}.focalLength', focal_length)
-            
-            # orient towards the horizon (with respect to RAM) and point towards horizon
-            orient_towards(last, earth_object, ram[i])
+            cmds.setAttr(f'{first_cam}.focalLength', focal_length)
+
+            if two_cams:
+                # create second cam
+                mc.camera(name = "ehs")
+                mc.move(element[0], element[1], element[2])
+                second_cam = mc.ls(sl=True)[0]
+                # add to our list to render later
+                cam_objects.append(second_cam)
+                cmds.setAttr(f'{second_cam}.focalLength', focal_length)
+                
+                # orient towards the horizon (with respect to RAM) and point towards horizon
+                orient_towards(first_cam, earth_object, direction, second_cam)
+            else:
+                orient_towards(first_cam, earth_object, direction)
+
 
     if render_image:
         # render all cameras that we created
