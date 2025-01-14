@@ -166,7 +166,7 @@ def orient_towards(source, target, ram, second=None):
     if not ideal:
         tilt = np.random.normal(0, .5, 9)
     else:
-        tilt = np.array([0, 0, 0])
+        tilt = np.zeros((9))
 
     # Get position of two objects (source and target)
     source_pos = cmds.xform(source, q=True, ws=True, t=True)
