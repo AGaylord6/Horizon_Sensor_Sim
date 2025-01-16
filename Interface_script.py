@@ -343,3 +343,23 @@ delete_old()
 # create the gui (which calls main when "confirm" button is clicked)
 create_gui(default_oe)
 
+
+
+# Set the horizontal and vertical field of view (FOV)
+def set_camera_fov(camera, horizontal_fov, vertical_fov):
+    # Calculate focal length based on FOV and default film aperture (in inches)
+    horizontal_aperture = mc.getAttr(f"{camera}.horizontalFilmAperture") * 25.4  # Convert to mm
+    vertical_aperture = mc.getAttr(f"{camera}.verticalFilmAperture") * 25.4  # Convert to mm
+
+    # Calculate focal length for the given FOV
+    focal_length_horizontal = (horizontal_aperture / (2 * math.tan(math.radians(horizontal_fov / 2))))
+    focal_length_vertical = (vertical_aperture / (2 * math.tan(math.radians(vertical_fov / 2))))
+
+    # Average the two to get a general focal length setting
+    focal_length = (focal_length_horizontal + focal_length_vertical) / 2
+
+    # Set the focal length on the camera
+    mc.setAttr(f"{camera}.focalLength", focal_length)
+
+# Set the camera's FOV to 70x110 degrees
+# set_camera_fov(camera_name, 110, 70)
