@@ -51,7 +51,7 @@ ideal = False
 # whether to render as color cam or ir cam (hides correct group)
 IR_cam = True
 # how many pairs of EHS images to create (roughly, depends on timestep)
-pic_count = 20
+pic_count = 10
 # how often to space cams along orbit
 pic_interval = int(total_time * 3600 / timestep / pic_count)
 if IR_cam:
@@ -62,11 +62,13 @@ else:
     pic_width = 512
     pic_height = 512
 # sensor width (in mm) and desired FOV
-cam_FOV = 70.0
-sensor_width = 34.0
+cam_FOV_vertical = 110.0
+cam_FOV_horizontal = 70
+sensor_width = 25.8
+sensor_height = 17.8 
 # angle at which our cams are mounted (degrees)
 # with respect to axis want to nadir point
-cam_mount_angle = 65
+cam_mount_angle = 25
 # array to store all camera objects created
 cam_objects = []
 earth_object = "earth"
@@ -251,6 +253,26 @@ def orient_towards(source, target, ram, second=None):
                                     om.MAngle(eulers.z).asDegrees()), worldSpace=True)
 
 
+def set_cam_fov(cam, horizontal_fov, vertical_fov):
+    '''
+    Set cam object to have the specified field of view and sensor size
+    '''
+    aspect_ratio = pic_width / pic_height
+
+    # set film back -> aperature to sensor size of camera
+    mc.setAttr(f'{cam}.horizontalFilmAperture', sensor_width / 25.4)
+    mc.setAttr(f'{cam}.verticalFilmAperture', sensor_height / 25.4)
+
+    # Convert FOV to focal length
+    fov_radians = math.radians(cam_FOV_vertical)
+    focal_length = sensor_height / (2 * math.tan(fov_radians / 2))
+    # hardcode focal length that gives 110 angle of view (which I think is for entire square then cut short by resolution)
+    focal_length = 9.033
+    
+    # Set the focal length for the camera
+    mc.setAttr(f'{cam}.focalLength', focal_length)
+
+
 def main(oe):
     '''
     Given orbital elements and the parameters from file header, 
@@ -290,11 +312,7 @@ def main(oe):
             # add to our list to render later
             cam_objects.append(first_cam)
             # set the FOV of the camera
-            # Convert FOV to focal length
-            fov_radians = math.radians(cam_FOV)
-            focal_length = sensor_width / (2 * math.tan(fov_radians / 2))
-            # Set the focal length for the camera
-            cmds.setAttr(f'{first_cam}.focalLength', focal_length)
+            set_cam_fov(first_cam, cam_FOV_horizontal, cam_FOV_vertical)
 
             if two_cams:
                 # create second cam
@@ -303,7 +321,7 @@ def main(oe):
                 second_cam = mc.ls(sl=True)[0]
                 # add to our list to render later
                 cam_objects.append(second_cam)
-                cmds.setAttr(f'{second_cam}.focalLength', focal_length)
+                set_cam_fov(second_cam, cam_FOV_horizontal, cam_FOV_vertical)
                 
                 # orient towards the horizon (with respect to RAM) and point towards horizon
                 orient_towards(first_cam, earth_object, direction, second_cam)
