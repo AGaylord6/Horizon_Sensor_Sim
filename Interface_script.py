@@ -15,7 +15,7 @@ Rendered images are created in selected project folder -> images
 import maya.cmds as mc
 import maya.api.OpenMaya as om
 
-# need to import all libraries using 
+# need to import all libraries (to maya) using 
 # C:\Program Files\Autodesk\Maya2025\bin>mayapy -m pip install numpy
 import numpy as np
 import math
@@ -340,14 +340,24 @@ def main(oe):
         # set arnold renderer and different settings
         mc.setAttr("defaultRenderGlobals.currentRenderer", "arnold", type="string")
         mc.setAttr("defaultArnoldDriver.ai_translator", "png", type="string")
-        mc.setAttr("defaultResolution.width", pic_width)
-        mc.setAttr("defaultResolution.height", pic_height)
+        mc.setAttr("defaultResolution.width", max(pic_width, pic_height))
+        mc.setAttr("defaultResolution.height", max(pic_width, pic_height))
         
         for i, cam in enumerate(cam_objects):
             # set file name and render for every cam we stored
             render_prefix = os.path.join(output_dir, f"{cam}")
             if IR_cam:
                 render_prefix = os.path.join(output_dir, f"{cam}_IR")
+
+            if pic_height != pic_width:
+                # crop our image to specified resolution
+                mc.setAttr("defaultRenderGlobals.useRenderRegion", 1)
+                # change sides to make 24 pixels horizontally (hopefully 70 FOV)
+                mc.setAttr("defaultRenderGlobals.leftRegion", (pic_height-pic_width) / 2)
+                mc.setAttr("defaultRenderGlobals.rightRegion", pic_height - (pic_height-pic_width) / 2 - 1)
+                # don't change top/bottom to keep 110 FOV
+                mc.setAttr("defaultRenderGlobals.bottomRegion", 0)
+                mc.setAttr("defaultRenderGlobals.topRegion", pic_height-1)
 
             mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
             # render every earth horizon sensor (EHS)
@@ -361,23 +371,3 @@ delete_old()
 # create the gui (which calls main when "confirm" button is clicked)
 create_gui(default_oe)
 
-
-
-# Set the horizontal and vertical field of view (FOV)
-def set_camera_fov(camera, horizontal_fov, vertical_fov):
-    # Calculate focal length based on FOV and default film aperture (in inches)
-    horizontal_aperture = mc.getAttr(f"{camera}.horizontalFilmAperture") * 25.4  # Convert to mm
-    vertical_aperture = mc.getAttr(f"{camera}.verticalFilmAperture") * 25.4  # Convert to mm
-
-    # Calculate focal length for the given FOV
-    focal_length_horizontal = (horizontal_aperture / (2 * math.tan(math.radians(horizontal_fov / 2))))
-    focal_length_vertical = (vertical_aperture / (2 * math.tan(math.radians(vertical_fov / 2))))
-
-    # Average the two to get a general focal length setting
-    focal_length = (focal_length_horizontal + focal_length_vertical) / 2
-
-    # Set the focal length on the camera
-    mc.setAttr(f"{camera}.focalLength", focal_length)
-
-# Set the camera's FOV to 70x110 degrees
-# set_camera_fov(camera_name, 110, 70)
