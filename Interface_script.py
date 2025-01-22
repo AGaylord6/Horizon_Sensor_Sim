@@ -24,6 +24,11 @@ import time
 import importlib
 import math
 
+from params import *
+from magnetorquer import Magnetorquer
+from sat_model import Magnetorquer_Sat
+from Simulator.simulator import *
+
 # import PySOL in specific order
 # must pip install astropy, scipy, h5py, matplotlib, geopandas, geodatasets
 import PySOL.wmm as wmm
@@ -35,45 +40,9 @@ importlib.reload(PySOL.sol_sim)
 
 # ============== PARAMETERS =====================================
 
-earth_radius = 6378
-# oe = [0, earth_radius + 450, 0.0000922, 51, -10, 80]
-default_oe = [0, earth_radius + 450, 0.0000922, 90, 90, 0]
-# total time to simulate (hours)
-total_time = 1.6
-# timestep between points (seconds)
-timestep = 60
-# option to only highlight orbit path with new cams + images
-cubes_path_no_cams = False
-render_image = True
-two_cams = True
-# whether our cams should be tilted and not ram pointed
-ideal = False
-# whether to render as color cam or ir cam (hides correct group)
-IR_cam = True
-# how many pairs of EHS images to create (roughly, depends on timestep)
-pic_count = 10
-# how often to space cams along orbit
-pic_interval = int(total_time * 3600 / timestep / pic_count)
-if IR_cam:
-    pic_width = 24
-    pic_height = 32
-else:
-    # settings for higher quality color cam
-    pic_width = 512
-    pic_height = 512
-# sensor width (in mm) and desired FOV
-cam_FOV_vertical = 110.0
-cam_FOV_horizontal = 70
-sensor_width = 25.8
-sensor_height = 17.8 
-# angle at which our cams are mounted (degrees)
-# with respect to axis want to nadir point
-cam_mount_angle = 25
 # array to store all camera objects created
 cam_objects = []
-earth_object = "earth"
-sun_earth_group = "earth_sun"
-ir_earth_group = "earth_IR"
+
 # hide the correct groups based on option selected
 if IR_cam:
     mc.hide(sun_earth_group)
@@ -84,6 +53,11 @@ else:
 # if only rendering cubes to show path, don't render
 if cubes_path_no_cams:
     render_images = False
+
+if SIMULATING:
+    render_images = False
+    ideal = False
+    # set pic_interval to every time step?
 
 # ============== FUNCTIONS =====================================
 
@@ -209,7 +183,7 @@ def orient_towards(source, target, ram, second=None):
 
     if not cam_mount_angle:
         # Calculate the angle from the Earth's center to the object's position
-        theta_center_to_X = math.acos((earth_radius * .001) / d) 
+        theta_center_to_X = math.acos((EARTH_RADIUS * .001) / d) 
         # Angle of the line connecting the center to the tangent plane
         tangent_angle = math.pi / 2 - theta_center_to_X  
     
@@ -280,12 +254,58 @@ def main(oe):
     '''
     # get gps data in ecef frame from python orbital simulated library
     # also get ram velocity vector for each step (km/s)
-    B_field, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, total_time, timestep, None, False, True, True)
-    # B_field, gps = PySOL.sol_sim.get_orbit_data(file_name, generate_GPS)
+    # TODO: add ram to get_orbit_data
+    B_earth, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, HOURS, DT, None, False, True, True)
+    # B_eart, gps = PySOL.sol_sim.get_orbit_data(B_FIELD_CSV_FILE, true)
+    # convert to km
     gps = gps * .001
     ram = ram * .001
 
+    if SIMULATING:
+        # create 3 Magnetorquer objects to store in Magnetorquer_Sat object
+        mag1 = Magnetorquer(n = FERRO_NUM_TURNS, area = FERRO_AREA, k = K, epsilon = FERRO_EPSILON)
+        mag2 = Magnetorquer(n = FERRO_NUM_TURNS, area = FERRO_AREA, k = K, epsilon = FERRO_EPSILON)
+        mag3 = Magnetorquer(n = AIR_NUM_TURNS, area = AIR_AREA, k = K, epsilon = 1)
+        mag_array = np.array([mag1, mag2, mag3])
+
+        # initialize object to hold satellite properties
+        mag_sat = Magnetorquer_Sat(CUBESAT_BODY_INERTIA, mag_array, VELOCITY_INITIAL, CONSTANT_B_FIELD_MAG, np.array([0.0, 0.0, 0.0]), DT, GYRO_WORKING)
+
+        # run simulation from simulator.py and generate pdf report of results
+        sim = Simulator(mag_sat, B_earth)
+
     for i, element in enumerate(gps):
+
+        # protocal that replaces run_b_dot_sim for ehs simulator
+        if SIMULATING:
+            ideal = sim.find_ideal(i)
+
+            # generate fake sensor data in body frame based on last state
+            sim.generateData_step(ideal, i)
+
+            current_state = sim.propagate_step(i)
+
+            # calculate total power usage for this time step (Watts)
+            # sim.totalPower[i] = sim.power_output[i][0] + sim.power_output[i][1] + sim.power_output[i][2]
+
+            # threshold 0.5-1 degress per second per axis
+            # thresholdLow = 0
+            # thresholdHigh = DETUMBLE_THRESHOLD
+
+            # angularX = abs(sim.states[i][4])
+            # angularY = abs(sim.states[i][5])
+            # angularZ = abs(sim.states[i][6])
+
+            # if(sim.finishedTime == -1):
+            #     if (thresholdLow <= angularX <= thresholdHigh) and (thresholdLow <= angularY <= thresholdHigh) and (thresholdLow <= angularZ <= thresholdHigh):
+            #         # record first time we hit "detumbled" threshold (seconds)
+            #         sim.finishedTime = i*DT
+                    
+            #         # When the "detumbled" threshold is hit, calculate total Energy
+            #         # Total Energy is calculated as a "Rieman Sum" of the total power used at each time step multiplied by the time step
+            #         for step in range(i):
+            #             sim.energy = sim.energy + sim.totalPower[step]*sim.dt
+
         if cubes_path_no_cams:
             # generate cubes that show orbit
             mc.polyCube(name = "orbit" + str(i))
@@ -329,7 +349,7 @@ def main(oe):
                 orient_towards(first_cam, earth_object, direction)
 
 
-    if render_image:
+    if render_images:
         # render all cameras that we created
         print("render every ", pic_interval, " frames")
         
@@ -369,5 +389,5 @@ def main(oe):
 delete_old()
 
 # create the gui (which calls main when "confirm" button is clicked)
-create_gui(default_oe)
+create_gui(ORBITAL_ELEMENTS)
 
