@@ -71,7 +71,7 @@ CONSTANT_B_FIELD = False
 RW_OFF = True
 SENSOR_NOISE = True
 # 0 = only create pdf output, 1 = show 3D animation visualization, 2 = both, 3 = none
-RESULT = 0
+RESULT = 3
 OUTPUT_DIR = "plotOutput"
 OUTPUT_FILE = "output.pdf"
 

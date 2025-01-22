@@ -25,8 +25,8 @@ import importlib
 import math
 
 from params import *
-from magnetorquer import Magnetorquer
-from sat_model import Magnetorquer_Sat
+from Simulator.magnetorquer import Magnetorquer
+from Simulator.sat_model import Magnetorquer_Sat
 from Simulator.simulator import *
 
 # import PySOL in specific order

@@ -11,7 +11,7 @@ All parameters (variables in caps) are stored in *params.py*
 '''
 
 
-from Simulator.PySOL.wmm import *
+# from Simulator.PySOL.wmm import *
 from Simulator.visualizer import *
 import time
 from Simulator.graphing import *
