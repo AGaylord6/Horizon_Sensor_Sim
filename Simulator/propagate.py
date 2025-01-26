@@ -6,10 +6,10 @@ Using to simulate how our satellite would behave in space under the effect of ce
 '''
 import numpy as np
 
-from B_dot import B_dot
-from all_EOMs import eoms, normalize
-from sat_model import Magnetorquer_Sat
-from params import FERRO_MAX_TORQUE, MAX_VOLTAGE, MAX_CURRENT, RESISTANCE_MAG, INDUCTANCE_MAG, AIR_MAX_TORQUE
+from Horizon_Sensor_Sim.Simulator.B_dot import B_dot
+from Horizon_Sensor_Sim.Simulator.all_EOMs import eoms, normalize
+from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
+from Horizon_Sensor_Sim.params import FERRO_MAX_TORQUE, MAX_VOLTAGE, MAX_CURRENT, RESISTANCE_MAG, INDUCTANCE_MAG, AIR_MAX_TORQUE
 
 def propagate(quaternion: np.ndarray, velocity: np.ndarray, mag_sat: Magnetorquer_Sat, prev_current: np.ndarray, dt: float, sim=None, iteration=None):
     '''

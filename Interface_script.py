@@ -16,7 +16,7 @@ import maya.cmds as mc
 import maya.api.OpenMaya as om
 
 # need to import all libraries (to maya) using 
-# C:\Program Files\Autodesk\Maya2025\bin>mayapy -m pip install numpy
+# C:\Program Files\Autodesk\Maya2025\bin>.\mayapy -m pip install numpy
 import numpy as np
 import math
 import sys, os
@@ -24,10 +24,12 @@ import time
 import importlib
 import math
 
-from params import *
-from Simulator.magnetorquer import Magnetorquer
-from Simulator.sat_model import Magnetorquer_Sat
-from Simulator.simulator import *
+from Horizon_Sensor_Sim.params import *
+print("INTERVAL: ", pic_interval)
+print("IDEAL: ", IDEAL_TILT)
+from Horizon_Sensor_Sim.Simulator.magnetorquer import Magnetorquer
+from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
+from Horizon_Sensor_Sim.Simulator.simulator import *
 
 # import PySOL in specific order
 # must pip install astropy, scipy, h5py, matplotlib, geopandas, geodatasets
@@ -51,12 +53,12 @@ else:
     mc.hide(ir_earth_group)
     mc.showHidden(sun_earth_group)
 # if only rendering cubes to show path, don't render
-if cubes_path_no_cams:
-    render_images = False
+# if cubes_path_no_cams:
+    # render_images = False
 
-if SIMULATING:
-    render_images = False
-    ideal = False
+# if SIMULATING: # TODO
+    # render_images = False
+    # ideal = False
     # set pic_interval to every time step?
 
 # ============== FUNCTIONS =====================================
@@ -139,7 +141,7 @@ def orient_towards(source, target, ram, second=None):
     TODO: add more options to specify what tilt our cameras are mounted at instead of calculating ideal every time
     '''
 
-    if not ideal:
+    if not IDEAL_TILT:
         tilt = np.random.normal(0, .5, 9)
     else:
         tilt = np.zeros((9))
@@ -255,6 +257,7 @@ def main(oe):
     # get gps data in ecef frame from python orbital simulated library
     # also get ram velocity vector for each step (km/s)
     # TODO: add ram to get_orbit_data
+    print("TEST")
     B_earth, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, HOURS, DT, None, False, True, True)
     # B_eart, gps = PySOL.sol_sim.get_orbit_data(B_FIELD_CSV_FILE, true)
     # convert to km
@@ -278,10 +281,10 @@ def main(oe):
 
         # protocal that replaces run_b_dot_sim for ehs simulator
         if SIMULATING:
-            ideal = sim.find_ideal(i)
+            ideal_state = sim.find_ideal(i)
 
             # generate fake sensor data in body frame based on last state
-            sim.generateData_step(ideal, i)
+            sim.generateData_step(ideal_state, i)
 
             current_state = sim.propagate_step(i)
 
@@ -315,7 +318,7 @@ def main(oe):
         # only create a camera object every so often
         if i % pic_interval == 0 and not cubes_path_no_cams:
             # direction that our cam should be oriented
-            if ideal:
+            if IDEAL_TILT:
                 direction = ram[i]
             else:
                 # to simulate non-ram pointing, pick a random direction to orient ourselves towards

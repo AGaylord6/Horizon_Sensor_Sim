@@ -8,8 +8,9 @@ Magnetorquer_Sat class contains the specifications and current state for our Nea
 
 import math
 import numpy as np
-import magnetorquer as mag
-from params import AIR_MAX_TORQUE, FERRO_MAX_TORQUE
+
+import Horizon_Sensor_Sim.Simulator.magnetorquer as mag
+from Horizon_Sensor_Sim.params import AIR_MAX_TORQUE, FERRO_MAX_TORQUE
 
 class Magnetorquer_Sat():
     '''

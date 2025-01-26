@@ -91,7 +91,7 @@ cubes_path_no_cams = False
 render_images = True
 two_cams = True
 # whether our cams should be tilted and not ram pointed
-ideal = False
+IDEAL_TILT = False
 # whether to render as color cam or ir cam (hides correct group)
 IR_cam = True
 # how many pairs of EHS images to create (roughly, depends on timestep)

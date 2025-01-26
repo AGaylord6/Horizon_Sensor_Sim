@@ -12,20 +12,20 @@ All parameters (variables in caps) are stored in *params.py*
 
 
 # from Simulator.PySOL.wmm import *
-from Simulator.visualizer import *
+from Horizon_Sensor_Sim.Simulator.visualizer import *
 import time
-from Simulator.graphing import *
-from Simulator.saving import *
+from Horizon_Sensor_Sim.Simulator.graphing import *
+from Horizon_Sensor_Sim.Simulator.saving import *
 
 import os
 import sys
 
 # import params module from parent directory
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from params import *
-from propagate import *
-from sat_model import Magnetorquer_Sat
-from all_EOMs import *
+from Horizon_Sensor_Sim.params import *
+from Horizon_Sensor_Sim.Simulator.propagate import *
+from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
+from Horizon_Sensor_Sim.Simulator.all_EOMs import *
 import math
 
 class Simulator():

@@ -13,14 +13,14 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib
 from mpl_toolkits.mplot3d import Axes3D
-from Simulator.saving import *
+from Horizon_Sensor_Sim.Simulator.saving import *
 
 import os
 import sys
 
 # import params module from parent directory
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from params import *
+from Horizon_Sensor_Sim.params import *
 
 
 def plot_multiple_lines(data, labels, title, x=0, y=0, text="", fileName="default.png", ylabel=""):

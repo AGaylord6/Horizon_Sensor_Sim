@@ -20,7 +20,7 @@ import sys
 
 # import params module from parent directory
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from params import OUTPUT_DIR, ORBITAL_PERIOD, ORBITAL_ELEMENTS, DEGREES
+from Horizon_Sensor_Sim.params import OUTPUT_DIR, ORBITAL_PERIOD, ORBITAL_ELEMENTS, DEGREES
 
 def saveFig(fig, fileName):
     '''

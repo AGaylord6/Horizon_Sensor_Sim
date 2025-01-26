@@ -7,8 +7,8 @@ References the Magnetorquer_Sat class in mag_EOMs.py
 
 '''
 
-from sat_model import Magnetorquer_Sat
-from all_EOMs import normalize  # is this needed
+from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
+from Horizon_Sensor_Sim.Simulator.all_EOMs import normalize  # is this needed
 import numpy as np
 
 def B_dot(sat: Magnetorquer_Sat):
