@@ -24,12 +24,39 @@ import time
 import importlib
 import math
 
-from Horizon_Sensor_Sim.params import *
-print("INTERVAL: ", pic_interval)
-print("IDEAL: ", IDEAL_TILT)
+# ensure that our libraries are loaded correctly and recognized on path var
+pysol_path = "C:\\Users/agaylord/Documents/maya/scripts\\PySOL"
+if pysol_path not in sys.path:
+    sys.path.append(pysol_path)
+ehs_path = "C:\\Users/agaylord/Documents/maya/scripts\\Horizon_Sensor_Sim" 
+if ehs_path not in sys.path:
+    sys.path.append(ehs_path)
+
+# reload all library functions while editing to make sure things are updated
+import Horizon_Sensor_Sim.params
+importlib.reload(Horizon_Sensor_Sim.params)
+
+importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
+import Horizon_Sensor_Sim.Simulator.B_dot
+importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
+
+import Horizon_Sensor_Sim.Simulator.propagate
+importlib.reload(Horizon_Sensor_Sim.Simulator.propagate)
+
+importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
+import Horizon_Sensor_Sim.Simulator.graphing
+importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
+
+importlib.reload(Horizon_Sensor_Sim.Simulator.saving)
+import Horizon_Sensor_Sim.Simulator.saving
+importlib.reload(Horizon_Sensor_Sim.Simulator.saving)
+
 from Horizon_Sensor_Sim.Simulator.magnetorquer import Magnetorquer
 from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
 from Horizon_Sensor_Sim.Simulator.simulator import *
+importlib.reload(Horizon_Sensor_Sim.Simulator.magnetorquer)
+importlib.reload(Horizon_Sensor_Sim.Simulator.sat_model)
+importlib.reload(Horizon_Sensor_Sim.Simulator.simulator)
 
 # import PySOL in specific order
 # must pip install astropy, scipy, h5py, matplotlib, geopandas, geodatasets
@@ -39,6 +66,7 @@ import PySOL.spacecraft as sp
 import PySOL.orb_tools as ot
 
 importlib.reload(PySOL.sol_sim)
+
 
 # ============== PARAMETERS =====================================
 
@@ -53,13 +81,13 @@ else:
     mc.hide(ir_earth_group)
     mc.showHidden(sun_earth_group)
 # if only rendering cubes to show path, don't render
-# if cubes_path_no_cams:
-    # render_images = False
+if cubes_path_no_cams:
+    render_images = False
 
-# if SIMULATING: # TODO
-    # render_images = False
-    # ideal = False
-    # set pic_interval to every time step?
+if SIMULATING: 
+    render_images = False
+    ideal = False
+    # TODO: set pic_interval to every time step?
 
 # ============== FUNCTIONS =====================================
 
@@ -132,6 +160,27 @@ def create_gui(default_oe):
     mc.showWindow(window_name)
 
 
+def quat_rotate(obj, quat):
+    """
+    Apply a quaternion rotation to an object in Maya.
+    
+    @params:
+        obj: cube/cam to be rotated
+        quat: quaternion in (w, x, y, z) form
+    """
+    # Convert quaternion to MQuaternion object (x, y, z, w)
+    q = om.MQuaternion(quat[1], quat[2], quat[3], quat[0])
+
+    # Convert the quaternion to Euler angles
+    euler_rotation = q.asEulerRotation()
+
+    # Convert Euler angles to degrees (Maya uses degrees for rotations)
+    euler_rotation_degrees = [angle * (180.0 / 3.14159265359) for angle in euler_rotation]
+
+    # Apply the rotation to the object
+    mc.xform(obj, rotation=euler_rotation_degrees, worldSpace=True)
+
+
 def orient_towards(source, target, ram, second=None):
     '''
     Orient source object towards target using quaternion rotation
@@ -147,8 +196,8 @@ def orient_towards(source, target, ram, second=None):
         tilt = np.zeros((9))
 
     # Get position of two objects (source and target)
-    source_pos = cmds.xform(source, q=True, ws=True, t=True)
-    target_pos = cmds.xform(target, q=True, ws=True, t=True)
+    source_pos = mc.xform(source, q=True, ws=True, t=True)
+    target_pos = mc.xform(target, q=True, ws=True, t=True)
 
     # Calculate direction vector from source to target
     vector = om.MVector(target_pos[0] - source_pos[0],
@@ -257,12 +306,15 @@ def main(oe):
     # get gps data in ecef frame from python orbital simulated library
     # also get ram velocity vector for each step (km/s)
     # TODO: add ram to get_orbit_data
-    print("TEST")
-    B_earth, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, HOURS, DT, None, False, True, True)
-    # B_eart, gps = PySOL.sol_sim.get_orbit_data(B_FIELD_CSV_FILE, true)
+    if not GENERATE_NEW:
+        B_earth, gps = PySOL.sol_sim.get_orbit_data(CSV_FILE, GPS=True)
+    else:
+        B_earth, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, HOURS, DT, CSV_FILE, store_data=False, GPS=True, RAM=True)
+        ram = ram * .001
     # convert to km
     gps = gps * .001
-    ram = ram * .001
+    # initialize current state
+    current_state = np.zeros((STATE_SPACE_DIMENSION))
 
     if SIMULATING:
         # create 3 Magnetorquer objects to store in Magnetorquer_Sat object
@@ -279,17 +331,22 @@ def main(oe):
 
     for i, element in enumerate(gps):
 
+        # don't exceed simulation time, even if we have more gps data
+        if SIMULATING and i >= sim.n:
+            break
+
         # protocal that replaces run_b_dot_sim for ehs simulator
-        if SIMULATING:
+        if SIMULATING and i != 0:
             ideal_state = sim.find_ideal(i)
 
             # generate fake sensor data in body frame based on last state
             sim.generateData_step(ideal_state, i)
 
             current_state = sim.propagate_step(i)
+            # print("current state: ", current_state)
 
             # calculate total power usage for this time step (Watts)
-            # sim.totalPower[i] = sim.power_output[i][0] + sim.power_output[i][1] + sim.power_output[i][2]
+            sim.totalPower[i] = sim.power_output[i][0] + sim.power_output[i][1] + sim.power_output[i][2]
 
             # threshold 0.5-1 degress per second per axis
             # thresholdLow = 0
@@ -309,11 +366,13 @@ def main(oe):
             #         for step in range(i):
             #             sim.energy = sim.energy + sim.totalPower[step]*sim.dt
 
-        if cubes_path_no_cams:
+        if cubes_path_no_cams and i % (DT * 3000) == 0: # 200 for dt = .5
             # generate cubes that show orbit
             mc.polyCube(name = "orbit" + str(i))
             mc.move(element[0], element[1], element[2])
             mc.scale(.3,.3,.3)
+            if SIMULATING:
+                quat_rotate("orbit" + str(i), current_state[:4])
 
         # only create a camera object every so often
         if i % pic_interval == 0 and not cubes_path_no_cams:
@@ -387,6 +446,9 @@ def main(oe):
             mc.arnoldRender(camera=cam, render=True)
         
         print("All scenes rendered correctly to project folder->images!")
+
+    if SIMULATING:
+        sim.plot_and_viz_results()
 
 # delete all cube and cam objects from previous iterations
 delete_old()

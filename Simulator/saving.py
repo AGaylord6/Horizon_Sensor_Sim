@@ -154,7 +154,8 @@ Satellite info:
     pdf.multi_cell(0, 5, infoText, 0, 'L')
 
     # output the pdf to the outputFile
-    pdf.output(outputFile)
+    outputPath = os.path.join(my_path, outputFile)
+    pdf.output(outputPath)
 
 
 def pdfHeader(pdf, title):

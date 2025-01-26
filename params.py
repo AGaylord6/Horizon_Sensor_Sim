@@ -14,7 +14,7 @@ DEGREES = False
 
 QUAT_INITIAL = np.array([1.0, 0.0, 0.0, 0.0])
 # we want to start with 15 degrees/s in each axis
-VELOCITY_INITIAL = np.array([15.0,-15.0,-15.0])
+VELOCITY_INITIAL = np.array([15.0,-10.0,10.0])
 # VELOCITY_INITIAL = np.array([0.0, 10.0, 0.0])
 # convert to rad/s
 if not DEGREES:
@@ -52,7 +52,7 @@ print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
 TF = int(HOURS * 3600)
 # time step (how long between each iteration)
-DT = 60
+DT = .1
 # threshold for when we consider our satellite detumbled (degrees/s)
 DETUMBLE_THRESHOLD = 0.5
 # convert to rad/s
@@ -62,16 +62,18 @@ if not DEGREES:
 STATE_SPACE_DIMENSION = 7
 MEASUREMENT_SPACE_DIMENSION = 6
 
+# whether to generate new pySOL data or not
+GENERATE_NEW = False
 # csv to get pre-generated pysol b field from
-B_FIELD_CSV_FILE = "1_orbit_half_second.csv" # .05 timestep
-# B_FIELD_CSV_FILE = "1_orbit.csv" # .1 timestep
+# CSV_FILE = "1_orbit_half_second" # .5 dt
+CSV_FILE = "1_orbit_tenth_second" # .1 dt
 
 # if false, use PySOL to calculate orbital magnetic field
 CONSTANT_B_FIELD = False
 RW_OFF = True
 SENSOR_NOISE = True
 # 0 = only create pdf output, 1 = show 3D animation visualization, 2 = both, 3 = none
-RESULT = 3
+RESULT = 0
 OUTPUT_DIR = "plotOutput"
 OUTPUT_FILE = "output.pdf"
 
@@ -85,17 +87,17 @@ GYRO_WORKING = True
 # ================  3D OPTIONS  ======================================================
 
 # whether to run physics simulator or not
-SIMULATING = False
+SIMULATING = True
 # option to only highlight orbit path with new cams + images
-cubes_path_no_cams = False
-render_images = True
+cubes_path_no_cams = True
+render_images = False
 two_cams = True
 # whether our cams should be tilted and not ram pointed
-IDEAL_TILT = False
+IDEAL_TILT = True
 # whether to render as color cam or ir cam (hides correct group)
 IR_cam = True
 # how many pairs of EHS images to create (roughly, depends on timestep)
-pic_count = 10
+pic_count = 2
 # how often to space cams along orbit
 pic_interval = int(HOURS * 3600 / DT / pic_count)
 if IR_cam:
@@ -112,7 +114,7 @@ sensor_width = 25.8
 sensor_height = 17.8 
 # angle at which our cams are mounted (degrees)
 # with respect to axis want to nadir point
-cam_mount_angle = 25
+cam_mount_angle = 30
 earth_object = "earth"
 sun_earth_group = "earth_sun"
 ir_earth_group = "earth_IR"

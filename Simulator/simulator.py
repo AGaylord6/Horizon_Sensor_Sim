@@ -284,7 +284,7 @@ class Simulator():
             self.visualizeResults(self.states)
 
         # only show plot at end so they all show up
-        plt.show()
+        # plt.show()
 
 
     def saveFile(self, fileName):
@@ -299,7 +299,7 @@ class Simulator():
 
         savePDF(fileName, OUTPUT_DIR, self)
 
-        openFile(fileName)
+        # openFile(fileName)
 
 
     def visualizeResults(self, states, i = 0):
