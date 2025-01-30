@@ -61,4 +61,5 @@ def B_dot(sat: Magnetorquer_Sat):
     # note: alternatively, don't convert to voltage and tweak k accordingly to account for it
     voltage_in = np.array(current_in) * 12
 
+    return np.zeros((3))
     return np.array(voltage_in)

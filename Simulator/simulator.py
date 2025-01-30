@@ -45,7 +45,7 @@ class Simulator():
         # current velocity is stored in mag_sat
         #self.velocity = [mag_sat[0].w_sat, mag_sat[1].w_sat, mag_sat[2].w_sat] # create array storing angular velocity vector
         # current quaternion
-        self.quaternion = QUAT_INITIAL
+        self.quaternion = normalize(QUAT_INITIAL)
 
         # # starting state (default is standard quaternion and no angular velocity)
         # self.state = np.concatenate((normalize(QUAT_INITIAL), VELOCITY_INITIAL))

@@ -29,6 +29,7 @@ def propagate(quaternion: np.ndarray, velocity: np.ndarray, mag_sat: Magnetorque
         w_sat_new: predicted angular velocities
     '''
     # generate voltage (volts) needed to counteract angular velocity
+    # TODO: get voltage in from nadir_point or find_horizon function instead (which will read last created images)
     voltage_in = B_dot(mag_sat)
     # make sure voltage is within bounds
     voltage_in = np.clip(voltage_in, -MAX_VOLTAGE, MAX_VOLTAGE)

@@ -178,17 +178,11 @@ def quat_rotate(obj, quat, second=None):
     # Convert the quaternion to Euler angles
     euler_rotation = q.asEulerRotation()
 
-    # Create an MTransformationMatrix from the provided quaternion
-    # quat_matrix = orientation_quat.asMatrix()
-
-    # Convert the quaternion rotation matrix to Euler angles
-    # transform = om.MTransformationMatrix(quat_matrix)
-    # eulers = transform.rotation(om.MEulerRotation.kXYZ)
-
     # Convert Euler angles to degrees (Maya uses degrees for rotations)
     euler_rotation_degrees = [angle * (180.0 / 3.14159265359) for angle in euler_rotation]
     if second:
         # define the euler rotation that has the cameras face towards each other
+        # TODO: are they oriented on correct face (x, y, etc)? Does it matter for our controls?
         cam2_euler = [-euler_rotation_degrees[0] + 180, -euler_rotation_degrees[1], euler_rotation_degrees[2] + 180]
 
         # apply camera tilt if we're workin with two cam objects
@@ -341,6 +335,24 @@ def main(oe):
     current_state = np.zeros((STATE_SPACE_DIMENSION))
     second_cam = None
     first_cam = None
+    # set arnold renderer and different settings
+    # find output directory (current project folder -> images)
+    project_path = mc.workspace(query=True, rootDirectory=True)
+    output_dir = os.path.join(project_path, "images")
+    mc.setAttr("defaultRenderGlobals.currentRenderer", "arnold", type="string")
+    mc.setAttr("defaultArnoldDriver.ai_translator", "png", type="string")
+    mc.setAttr("defaultResolution.width", max(pic_width, pic_height))
+    mc.setAttr("defaultResolution.height", max(pic_width, pic_height))
+    
+    if pic_height != pic_width:
+        # crop our image to specified resolution
+        mc.setAttr("defaultRenderGlobals.useRenderRegion", 1)
+        # change sides to make 24 pixels horizontally (hopefully 70 FOV)
+        mc.setAttr("defaultRenderGlobals.leftRegion", (pic_height-pic_width) / 2)
+        mc.setAttr("defaultRenderGlobals.rightRegion", pic_height - (pic_height-pic_width) / 2 - 1)
+        # don't change top/bottom to keep 110 FOV
+        mc.setAttr("defaultRenderGlobals.bottomRegion", 0)
+        mc.setAttr("defaultRenderGlobals.topRegion", pic_height-1)
 
     if SIMULATING:
         # create 3 Magnetorquer objects to store in Magnetorquer_Sat object
@@ -363,6 +375,7 @@ def main(oe):
 
         # protocal that replaces run_b_dot_sim for ehs simulator
         if SIMULATING and i != 0:
+            # TODO: add image generation to ideal?? How to get images form current timestep?
             ideal_state = sim.find_ideal(i)
 
             # generate fake sensor data in body frame based on last state
@@ -442,6 +455,18 @@ def main(oe):
             if SIMULATING:
                 # orient our cameras towards current orientation and render images
                 quat_rotate(first_cam, current_state[:4], second_cam)
+
+                # set file name for first cam
+                render_prefix = os.path.join(output_dir, f"{first_cam}_IR_first")
+                mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
+                # render first earth horizon sensor (EHS)
+                mc.arnoldRender(camera=first_cam, render=True)
+
+                # set file name for second cam
+                render_prefix = os.path.join(output_dir, f"{first_cam}_IR_second")
+                mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
+                # render second earth horizon sensor (EHS)
+                mc.arnoldRender(camera=second_cam, render=True)
 
 
     if render_images and not SIMULATING:
