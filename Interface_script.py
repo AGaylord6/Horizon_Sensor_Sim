@@ -36,18 +36,18 @@ if ehs_path not in sys.path:
 import Horizon_Sensor_Sim.params
 importlib.reload(Horizon_Sensor_Sim.params)
 
-importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
+# importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
 import Horizon_Sensor_Sim.Simulator.B_dot
 importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
 
 import Horizon_Sensor_Sim.Simulator.propagate
 importlib.reload(Horizon_Sensor_Sim.Simulator.propagate)
 
-importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
+# importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
 import Horizon_Sensor_Sim.Simulator.graphing
 importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
 
-importlib.reload(Horizon_Sensor_Sim.Simulator.saving)
+# importlib.reload(Horizon_Sensor_Sim.Simulator.saving)
 import Horizon_Sensor_Sim.Simulator.saving
 importlib.reload(Horizon_Sensor_Sim.Simulator.saving)
 
@@ -160,22 +160,41 @@ def create_gui(default_oe):
     mc.showWindow(window_name)
 
 
-def quat_rotate(obj, quat):
+def quat_rotate(obj, quat, second=None):
     """
     Apply a quaternion rotation to an object in Maya.
     
     @params:
         obj: cube/cam to be rotated
         quat: quaternion in (w, x, y, z) form
+            https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+            error quat: https://stackoverflow.com/questions/23860476/how-to-get-opposite-angle-quaternion
+        second (optional): second ehs cam. They will be tilted by cam_mount_angle
     """
     # Convert quaternion to MQuaternion object (x, y, z, w)
     q = om.MQuaternion(quat[1], quat[2], quat[3], quat[0])
+    q = q.normal()
 
     # Convert the quaternion to Euler angles
     euler_rotation = q.asEulerRotation()
 
+    # Create an MTransformationMatrix from the provided quaternion
+    # quat_matrix = orientation_quat.asMatrix()
+
+    # Convert the quaternion rotation matrix to Euler angles
+    # transform = om.MTransformationMatrix(quat_matrix)
+    # eulers = transform.rotation(om.MEulerRotation.kXYZ)
+
     # Convert Euler angles to degrees (Maya uses degrees for rotations)
     euler_rotation_degrees = [angle * (180.0 / 3.14159265359) for angle in euler_rotation]
+    if second:
+        # define the euler rotation that has the cameras face towards each other
+        cam2_euler = [-euler_rotation_degrees[0] + 180, -euler_rotation_degrees[1], euler_rotation_degrees[2] + 180]
+
+        # apply camera tilt if we're workin with two cam objects
+        euler_rotation_degrees[0] -= (90 - cam_mount_angle)
+        cam2_euler[0] -= (90 - cam_mount_angle)
+        mc.xform(second, rotation=cam2_euler, worldSpace=True)
 
     # Apply the rotation to the object
     mc.xform(obj, rotation=euler_rotation_degrees, worldSpace=True)
@@ -311,10 +330,17 @@ def main(oe):
     else:
         B_earth, gps, ram = PySOL.sol_sim.generate_orbit_data(oe, HOURS, DT, CSV_FILE, store_data=False, GPS=True, RAM=True)
         ram = ram * .001
+    if len(B_earth) > int(TF / DT):
+        B_earth = B_earth[:int(TF / DT)]
+    elif len(B_earth) < int(TF / DT):
+        print("ERROR: not enough data points in B_earth. {} needed, {} created".format(int(TF/DT), len(B_earth)))
+        return
     # convert to km
     gps = gps * .001
     # initialize current state
     current_state = np.zeros((STATE_SPACE_DIMENSION))
+    second_cam = None
+    first_cam = None
 
     if SIMULATING:
         # create 3 Magnetorquer objects to store in Magnetorquer_Sat object
@@ -383,7 +409,7 @@ def main(oe):
                 # to simulate non-ram pointing, pick a random direction to orient ourselves towards
                 direction = np.random.randn(3)
                 direction = direction / np.linalg.norm(direction)
-                direction = ram[i]
+                # direction = ram[i]
 
             # create camera and move to current GPS
             mc.camera(name = "ehs")
@@ -405,13 +431,20 @@ def main(oe):
                 cam_objects.append(second_cam)
                 set_cam_fov(second_cam, cam_FOV_horizontal, cam_FOV_vertical)
                 
-                # orient towards the horizon (with respect to RAM) and point towards horizon
-                orient_towards(first_cam, earth_object, direction, second_cam)
-            else:
+                if not SIMULATING:
+                    # orient towards the horizon (with respect to RAM) and point towards horizon
+                    orient_towards(first_cam, earth_object, direction, second_cam)
+            
+            if not two_cams and not SIMULATING:
+                # orient cam towards horizon
                 orient_towards(first_cam, earth_object, direction)
 
+            if SIMULATING:
+                # orient our cameras towards current orientation and render images
+                quat_rotate(first_cam, current_state[:4], second_cam)
 
-    if render_images:
+
+    if render_images and not SIMULATING:
         # render all cameras that we created
         print("render every ", pic_interval, " frames")
         

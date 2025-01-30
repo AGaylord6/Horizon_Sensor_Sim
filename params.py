@@ -89,15 +89,15 @@ GYRO_WORKING = True
 # whether to run physics simulator or not
 SIMULATING = True
 # option to only highlight orbit path with new cams + images
-cubes_path_no_cams = True
+cubes_path_no_cams = False
 render_images = False
 two_cams = True
 # whether our cams should be tilted and not ram pointed
-IDEAL_TILT = True
+IDEAL_TILT = False
 # whether to render as color cam or ir cam (hides correct group)
 IR_cam = True
 # how many pairs of EHS images to create (roughly, depends on timestep)
-pic_count = 2
+pic_count = 20
 # how often to space cams along orbit
 pic_interval = int(HOURS * 3600 / DT / pic_count)
 if IR_cam:
