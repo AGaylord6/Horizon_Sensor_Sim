@@ -23,6 +23,7 @@ import sys, os
 import time
 import importlib
 import math
+import cv2
 
 # ensure that our libraries are loaded correctly and recognized on path var
 pysol_path = "C:\\Users/agaylord/Documents/maya/scripts\\PySOL"
@@ -35,21 +36,21 @@ if ehs_path not in sys.path:
 # reload all library functions while editing to make sure things are updated
 import Horizon_Sensor_Sim.params
 importlib.reload(Horizon_Sensor_Sim.params)
-
 # importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
 import Horizon_Sensor_Sim.Simulator.B_dot
 importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
-
 import Horizon_Sensor_Sim.Simulator.propagate
 importlib.reload(Horizon_Sensor_Sim.Simulator.propagate)
-
 # importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
 import Horizon_Sensor_Sim.Simulator.graphing
 importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
-
 # importlib.reload(Horizon_Sensor_Sim.Simulator.saving)
 import Horizon_Sensor_Sim.Simulator.saving
 importlib.reload(Horizon_Sensor_Sim.Simulator.saving)
+import Horizon_Sensor_Sim.Simulator.camera
+importlib.reload(Horizon_Sensor_Sim.Simulator.camera)
+import Horizon_Sensor_Sim.Simulator.image_processing
+importlib.reload(Horizon_Sensor_Sim.Simulator.image_processing)
 
 from Horizon_Sensor_Sim.Simulator.magnetorquer import Magnetorquer
 from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
@@ -311,6 +312,66 @@ def set_cam_fov(cam, horizontal_fov, vertical_fov):
     mc.setAttr(f'{cam}.focalLength', focal_length)
 
 
+def create_two_cams(gps, curr_quat, output_dir):
+    '''
+    Create two earth horizon sensors (EHS) at current orientation
+    Render their image and return from proper directory
+    @params:
+        gps (1x3 array): current gps coordinates of satellite
+        curr_quat (1x4 array): current orientation of satellite
+        output_dir: full path of location to store images in
+    @returns:
+        image1 (24x32 array): rendered image
+        image2 
+    '''
+
+    # create camera and move to current GPS
+    mc.camera(name = "ehs")
+    mc.move(gps[0], gps[1], gps[2])
+
+    # get created object (name not setting correctly for some reason)
+    first_cam = mc.ls(sl=True)[0]
+    # add to our list to render later
+    cam_objects.append(first_cam)
+    # set the FOV of the camera
+    set_cam_fov(first_cam, cam_FOV_horizontal, cam_FOV_vertical)
+
+    # create second cam
+    mc.camera(name = "ehs")
+    mc.move(gps[0], gps[1], gps[2])
+    second_cam = mc.ls(sl=True)[0]
+    # add to our list to render later
+    cam_objects.append(second_cam)
+    set_cam_fov(second_cam, cam_FOV_horizontal, cam_FOV_vertical)
+    
+    # orient our cameras towards current orientation and render images
+    quat_rotate(first_cam, curr_quat, second_cam)
+
+    # set file name for first cam
+    render_prefix = os.path.join(output_dir, f"{first_cam}_IR_first")
+    mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
+    # render first earth horizon sensor (EHS)
+    mc.arnoldRender(camera=first_cam, render=True)
+
+    # set file name for second cam
+    render_prefix = os.path.join(output_dir, f"{first_cam}_IR_second")
+    mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
+    # render second earth horizon sensor (EHS)
+    mc.arnoldRender(camera=second_cam, render=True)
+
+    # TODO: wait here if needed
+
+    # fetch our recently rendered images with openCV
+    # Construct the absolute path to the image
+    image_path = os.path.join(output_dir, f"{first_cam}_IR_first_1.png")
+    # read our image
+    image1 = cv2.imread(image_path)
+    image_path = os.path.join(output_dir, f"{first_cam}_IR_second_1.png")
+    image2 = cv2.imread(image_path)
+
+    return image1, image2
+
+
 def main(oe):
     '''
     Given orbital elements and the parameters from file header, 
@@ -375,35 +436,32 @@ def main(oe):
 
         # protocal that replaces run_b_dot_sim for ehs simulator
         if SIMULATING and i != 0:
-            # TODO: add image generation to ideal?? How to get images form current timestep?
-            ideal_state = sim.find_ideal(i)
 
+            # generate ideal state based on last
+            ideal_state = sim.find_ideal(i)
+            
             # generate fake sensor data in body frame based on last state
             sim.generateData_step(ideal_state, i)
 
+            if i % pic_interval == 0 and not cubes_path_no_cams:
+                # generate ehs, render image, and fetch from dir
+                image1, image2 = create_two_cams(element, ideal_state[:4], output_dir)
+
+                # process our images and store results in mag_sat
+                sim.process_images(image1, image2)
+
+            # check what protocol we should be in
+            sim.check_state()
+
+            # decide voltage for self.voltage[i] (depending on state)
+            # sim.generate_controls
+            
+            # propagate based on voltage[i-1]
             current_state = sim.propagate_step(i)
             # print("current state: ", current_state)
 
             # calculate total power usage for this time step (Watts)
             sim.totalPower[i] = sim.power_output[i][0] + sim.power_output[i][1] + sim.power_output[i][2]
-
-            # threshold 0.5-1 degress per second per axis
-            # thresholdLow = 0
-            # thresholdHigh = DETUMBLE_THRESHOLD
-
-            # angularX = abs(sim.states[i][4])
-            # angularY = abs(sim.states[i][5])
-            # angularZ = abs(sim.states[i][6])
-
-            # if(sim.finishedTime == -1):
-            #     if (thresholdLow <= angularX <= thresholdHigh) and (thresholdLow <= angularY <= thresholdHigh) and (thresholdLow <= angularZ <= thresholdHigh):
-            #         # record first time we hit "detumbled" threshold (seconds)
-            #         sim.finishedTime = i*DT
-                    
-            #         # When the "detumbled" threshold is hit, calculate total Energy
-            #         # Total Energy is calculated as a "Rieman Sum" of the total power used at each time step multiplied by the time step
-            #         for step in range(i):
-            #             sim.energy = sim.energy + sim.totalPower[step]*sim.dt
 
         if cubes_path_no_cams and i % (DT * 3000) == 0: # 200 for dt = .5
             # generate cubes that show orbit
@@ -412,7 +470,7 @@ def main(oe):
             mc.scale(.3,.3,.3)
             if SIMULATING:
                 quat_rotate("orbit" + str(i), current_state[:4])
-
+        '''
         # only create a camera object every so often
         if i % pic_interval == 0 and not cubes_path_no_cams:
             # direction that our cam should be oriented
@@ -467,7 +525,7 @@ def main(oe):
                 mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
                 # render second earth horizon sensor (EHS)
                 mc.arnoldRender(camera=second_cam, render=True)
-
+        '''
 
     if render_images and not SIMULATING:
         # render all cameras that we created

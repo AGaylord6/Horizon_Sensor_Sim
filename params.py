@@ -19,6 +19,7 @@ VELOCITY_INITIAL = np.array([0.0, 0.0, 0.0])
 # convert to rad/s
 if not DEGREES:
     VELOCITY_INITIAL *= math.pi / 180
+VOLTAGES_INITIAL = np.array([0.0, 0.0, 0.0])
 CURRENTS_INITIAL = np.array([0.0, 0.0, 0.0])
 RW_INITIAL = np.array([0.0, 0.0, 0.0, 0.0])
 
@@ -97,7 +98,7 @@ IDEAL_TILT = False
 # whether to render as color cam or ir cam (hides correct group)
 IR_cam = True
 # how many pairs of EHS images to create (roughly, depends on timestep)
-pic_count = 20
+pic_count = 100
 # how often to space cams along orbit
 pic_interval = int(HOURS * 3600 / DT / pic_count)
 if IR_cam:

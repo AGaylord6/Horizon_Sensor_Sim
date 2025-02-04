@@ -8,7 +8,6 @@ References the Magnetorquer_Sat class in mag_EOMs.py
 '''
 
 from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
-from Horizon_Sensor_Sim.Simulator.all_EOMs import normalize  # is this needed
 import numpy as np
 
 def B_dot(sat: Magnetorquer_Sat):
@@ -21,7 +20,7 @@ def B_dot(sat: Magnetorquer_Sat):
             B_body: Magnetic field of body from sensor (Teslas)
             gyro_working: whether gyroscope is working or not (bool)
             prevB: previous magnetic field of body (Teslas)
-            dt: timestep (UNIT?)
+            dt: timestep (s)
             3 magnetorquer objects, each with:
                 n_sat: Number of coils for magnetorquer (int)
                 A_sat: Area of the three magnetorquers resepctively (m^2)
@@ -52,14 +51,7 @@ def B_dot(sat: Magnetorquer_Sat):
 
     # print("magnetic moment: ", magneticMoment)
     
-    current_in = np.zeros((3))
-    # find current for 2 ferro and 1 air core magnetorquers using dipole / nA*epsilon
-    for i in range(3):
-        current_in[i] = desiredMagneticMoment[i] / (sat.mags[i].n * sat.mags[i].area * sat.mags[i].epsilon)
+    # convert from desired magnetic moment to voltage required to generate that moment
+    voltage_in = sat.momentToVoltage(desiredMagneticMoment)
 
-    # convert to voltage (12 is system's resistance)
-    # note: alternatively, don't convert to voltage and tweak k accordingly to account for it
-    voltage_in = np.array(current_in) * 12
-
-    return np.zeros((3))
     return np.array(voltage_in)

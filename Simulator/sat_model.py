@@ -10,6 +10,7 @@ import math
 import numpy as np
 
 import Horizon_Sensor_Sim.Simulator.magnetorquer as mag
+import Horizon_Sensor_Sim.Simulator.camera as cam
 from Horizon_Sensor_Sim.params import AIR_MAX_TORQUE, FERRO_MAX_TORQUE
 
 class Magnetorquer_Sat():
@@ -50,6 +51,13 @@ class Magnetorquer_Sat():
         self.prevB = prevB
         self.gyro_working = gyro_working
 
+        # what state our satellite is in ("detumble", "search", "point")
+        self.state = "detumble"
+
+        # create two camera objects (facing either direction)
+        self.cam1 = cam.Camera()
+        self.cam2 = cam.Camera()
+
         # all_mags = [0 for _ in range(3)] # create an array holding 3 Magnetorquer objects
 
         # for index, magnetorquer in enumerate(all_mags):
@@ -63,3 +71,24 @@ class Magnetorquer_Sat():
         #         
         #         ferro_epsilon = 1 + ((rel_perm - 1)/(1 + demag_factor*(rel_perm-1)))
         #         magnetorquer.epsilon = ferro_epsilon
+    
+    def momentToVoltage(self, moment: np.ndarray) -> np.ndarray:
+        '''
+        Converts a desired magnetic moment to the voltage needed to generate that moment
+
+        @params:
+            moment (np.ndarray, (1x3)): desired magnetic moment (Amps * m^2)
+        @returns:
+            voltage (np.ndarray, (1x3)): voltage needed to generate that moment (Volts)
+        '''
+        
+        # calculate the voltage needed to generate the desired magnetic moment
+        current = np.zeros((3))
+        # find current for 2 ferro and 1 air core magnetorquers using dipole / nA*epsilon
+        for i in range(3):
+            current[i] = moment[i] / (self.mags[i].n * self.mags[i].area * self.mags[i].epsilon)
+
+        # convert current to voltage using Ohm's Law
+        voltage = np.array(current) * RESISTANCE_MAG
+
+        return np.array(voltage)
