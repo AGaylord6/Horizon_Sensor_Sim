@@ -11,7 +11,7 @@ import numpy as np
 
 import Horizon_Sensor_Sim.Simulator.magnetorquer as mag
 import Horizon_Sensor_Sim.Simulator.camera as cam
-from Horizon_Sensor_Sim.params import AIR_MAX_TORQUE, FERRO_MAX_TORQUE
+from Horizon_Sensor_Sim.params import *
 
 class Magnetorquer_Sat():
     '''
@@ -51,8 +51,12 @@ class Magnetorquer_Sat():
         self.prevB = prevB
         self.gyro_working = gyro_working
 
+        # proportional and derivative for bang bang/pd controller
+        self.kp = KP
+        self.kd = KD
+
         # what state our satellite is in ("detumble", "search", "point")
-        self.state = "detumble"
+        self.state = STARTING_PROTOCOL
 
         # create two camera objects (facing either direction)
         self.cam1 = cam.Camera()

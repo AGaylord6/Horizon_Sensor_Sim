@@ -22,6 +22,7 @@ if not DEGREES:
 VOLTAGES_INITIAL = np.array([0.0, 0.0, 0.0])
 CURRENTS_INITIAL = np.array([0.0, 0.0, 0.0])
 RW_INITIAL = np.array([0.0, 0.0, 0.0, 0.0])
+STARTING_PROTOCOL = "search" # "detumble", "search", "point"
 
 # ============  ORBITAL DYNAMICS  ==================================================
 
@@ -48,12 +49,13 @@ CONSTANT_B_FIELD_MAG = np.array([19.42900375, 1.74830615, 49.13746833])
 
 # total time to run sim (unrounded hours)
 HOURS = ORBITAL_PERIOD / 3600
-HOURS = 1.6
+HOURS = 0.2
+HOURS = 40 / 3600
 print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
 TF = int(HOURS * 3600)
 # time step (how long between each iteration)
-DT = .1
+DT = .5
 # threshold for when we consider our satellite detumbled (degrees/s)
 DETUMBLE_THRESHOLD = 0.5
 # convert to rad/s
@@ -66,8 +68,8 @@ MEASUREMENT_SPACE_DIMENSION = 6
 # whether to generate new pySOL data or not
 GENERATE_NEW = False
 # csv to get pre-generated pysol b field from
-# CSV_FILE = "1_orbit_half_second" # .5 dt
-CSV_FILE = "1_orbit_tenth_second" # .1 dt
+CSV_FILE = "1_orbit_half_second" # .5 dt
+# CSV_FILE = "1_orbit_tenth_second" # .1 dt
 
 # if false, use PySOL to calculate orbital magnetic field
 CONSTANT_B_FIELD = False
@@ -133,6 +135,10 @@ CUBESAT_BODY_INERTIA_INVERSE = np.linalg.inv(CUBESAT_BODY_INERTIA)
 INCLINATION_RAD = math.radians(ORBITAL_ELEMENTS[3]) # inclination of orbit (radians)
 
 CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
+
+# bang-bang controller gains
+KP = .1
+KD = .1
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B

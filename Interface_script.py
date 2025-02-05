@@ -51,6 +51,10 @@ import Horizon_Sensor_Sim.Simulator.camera
 importlib.reload(Horizon_Sensor_Sim.Simulator.camera)
 import Horizon_Sensor_Sim.Simulator.image_processing
 importlib.reload(Horizon_Sensor_Sim.Simulator.image_processing)
+import Horizon_Sensor_Sim.Simulator.nadir_point
+importlib.reload(Horizon_Sensor_Sim.Simulator.nadir_point)
+import Horizon_Sensor_Sim.Simulator.BangBang
+importlib.reload(Horizon_Sensor_Sim.Simulator.BangBang)
 
 from Horizon_Sensor_Sim.Simulator.magnetorquer import Magnetorquer
 from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
@@ -359,8 +363,6 @@ def create_two_cams(gps, curr_quat, output_dir):
     # render second earth horizon sensor (EHS)
     mc.arnoldRender(camera=second_cam, render=True)
 
-    # TODO: wait here if needed
-
     # fetch our recently rendered images with openCV
     # Construct the absolute path to the image
     image_path = os.path.join(output_dir, f"{first_cam}_IR_first_1.png")
@@ -443,20 +445,20 @@ def main(oe):
             # generate fake sensor data in body frame based on last state
             sim.generateData_step(ideal_state, i)
 
-            if i % pic_interval == 0 and not cubes_path_no_cams:
+            if not cubes_path_no_cams: # i % pic_interval == 0 and 
                 # generate ehs, render image, and fetch from dir
                 image1, image2 = create_two_cams(element, ideal_state[:4], output_dir)
 
                 # process our images and store results in mag_sat
                 sim.process_images(image1, image2)
 
-            # check what protocol we should be in
-            sim.check_state()
+            # check what protocol we should be in and update state
+            sim.mag_sat.state = sim.check_state()
 
-            # decide voltage for self.voltage[i] (depending on state)
-            # sim.generate_controls
+            # decide voltage for self.voltages[i] (depending on state)
+            sim.controls(i)
             
-            # propagate based on voltage[i-1]
+            # propagate based on voltages[i]
             current_state = sim.propagate_step(i)
             # print("current state: ", current_state)
 

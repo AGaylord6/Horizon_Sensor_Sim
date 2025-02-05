@@ -27,6 +27,8 @@ from Horizon_Sensor_Sim.Simulator.propagate import *
 from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
 from Horizon_Sensor_Sim.Simulator.all_EOMs import *
 from Horizon_Sensor_Sim.Simulator.image_processing import *
+from Horizon_Sensor_Sim.Simulator.B_dot import *
+from Horizon_Sensor_Sim.Simulator.nadir_point import *
 import math
 
 class Simulator():
@@ -129,7 +131,7 @@ class Simulator():
 
     def propagate_step(self, i):
         '''
-        Based on our last state and voltage output from our controls, progate through our EOMs to get the next state
+        Based on our last state and voltage output from our controls (voltages[i]), progate through our EOMs to get the next state
         Populates self.states[i], allowing us to generate realistic data
         '''
 
@@ -233,8 +235,8 @@ class Simulator():
         '''
 
         self.mag_sat.cam1.roll, self.mag_sat.cam1.pitch, self.mag_sat.cam1.alpha = processImage(image1)
-        print("first alpha: ", self.mag_sat.cam1.alpha)
         self.mag_sat.cam2.roll, self.mag_sat.cam2.pitch, self.mag_sat.cam2.alpha = processImage(image2)
+        # print("alphas: {} {}".format(self.mag_sat.cam1.alpha, self.mag_sat.cam2.alpha))
 
 
     def check_state(self):
@@ -246,45 +248,67 @@ class Simulator():
             Also always check if speed is too high??
         
         '''
-        return 0
-        if sim.mag_sat.state == "detumble":
+        if self.mag_sat.state == "detumble":
             # threshold 0.5-1 degress per second per axis
             thresholdLow = 0
             thresholdHigh = DETUMBLE_THRESHOLD
 
-            angularX = abs(sim.states[i][4])
-            angularY = abs(sim.states[i][5])
-            angularZ = abs(sim.states[i][6])
+            angularX = abs(self.states[i][4])
+            angularY = abs(self.states[i][5])
+            angularZ = abs(self.states[i][6])
 
-            if(sim.finishedTime == -1):
+            if(self.finishedTime == -1):
                 if (thresholdLow <= angularX <= thresholdHigh) and (thresholdLow <= angularY <= thresholdHigh) and (thresholdLow <= angularZ <= thresholdHigh):
                     # record first time we hit "detumbled" threshold (seconds)
-                    sim.finishedTime = i*DT
+                    self.finishedTime = i*DT
                     
                     # When the "detumbled" threshold is hit, calculate total Energy
                     # Total Energy is calculated as a "Rieman Sum" of the total power used at each time step multiplied by the time step
                     for step in range(i):
-                        sim.energy = sim.energy + sim.totalPower[step]*sim.dt
+                        self.energy = self.energy + self.totalPower[step]*self.dt
                     
                     # move to horizon searching protocol
-                    sim.mag_sat.state == "search"
+                    return "search"
+            else:
+                return "search"
 
-        elif sim.mag_sat.state == "search":
+            return "detumble"
+
+        elif self.mag_sat.state == "search":
             # check last image results--stored in mag_sat? Cam object to store results?
             # if both see horizon, move to point
+            if self.mag_sat.cam1.alpha >= 0.0 and self.mag_sat.cam2.alpha >= 0.0:
+                print("SWITCH TO POINT")
+                return "point"
+            else:
+                return "search"
+
             # count to see how long we've been waiting for??
-            pass
-        elif sim.mag_sat.state == "point":
+        elif self.mag_sat.state == "point":
             # check if we lost horizon--move to search
-            pass
+            if self.mag_sat.cam1.alpha == 0.0 or self.mag_sat.cam2.alpha == 0.0:
+                return "search"
+            else:
+                return "point"
+        else:
+            return "INVALID"
 
     
-    def controls(self):
+    def controls(self, i):
         '''
         Based on saved sensor data and current protocol state, generate correct controls voltages
+        Voltage for next step is stored in self.voltages[i]
         
         '''
-        pass
+        if self.mag_sat.state == "detumble":
+            # oppose angular velocity
+            self.voltages[i] = B_dot(self.mag_sat)
+        elif self.mag_sat.state == "search":
+            # do nothing while horizon searching, for now
+            self.voltages[i] = np.zeros((3))
+        elif self.mag_sat.state == "point":
+            # process images and try to center cams
+            self.voltages[i] = np.clip(nadir_point(self.mag_sat), -MAX_VOLTAGE, MAX_VOLTAGE)
 
 
     def run_b_dot_sim(self):
