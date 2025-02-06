@@ -278,7 +278,7 @@ class Simulator():
             # check last image results--stored in mag_sat? Cam object to store results?
             # if both see horizon, move to point
             if self.mag_sat.cam1.alpha >= 0.0 and self.mag_sat.cam2.alpha >= 0.0:
-                print("SWITCH TO POINT")
+                # print("SWITCH TO POINT")
                 return "point"
             else:
                 return "search"
@@ -286,7 +286,7 @@ class Simulator():
             # count to see how long we've been waiting for??
         elif self.mag_sat.state == "point":
             # check if we lost horizon--move to search
-            if self.mag_sat.cam1.alpha == 0.0 or self.mag_sat.cam2.alpha == 0.0:
+            if (0.0 <= self.mag_sat.cam1.alpha <= 0.03) or (0.0 <= self.mag_sat.cam2.alpha <= 0.03):
                 return "search"
             else:
                 return "point"
@@ -376,6 +376,7 @@ class Simulator():
         '''
         Plots the currents and torque created by our magnetorquers
         '''
+        plot_xyz(self.voltages, "Voltages", fileName="Voltages.png", ylabel="Voltage (Volts)")
         plot_xyz(self.currents, "Currents", fileName="Currents.png", ylabel="Current (Amps)")
         plot_xyz(self.torques, "Torques", fileName="Torques.png", ylabel="Torque (N*m)")
         plot_xyz(self.power_output, "Power Usage", fileName="Power_Output.png", ylabel="Power (Watts)")

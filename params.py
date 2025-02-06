@@ -48,9 +48,9 @@ CONSTANT_B_FIELD_MAG = np.array([19.42900375, 1.74830615, 49.13746833])
 # ============  SIM OPTIONS  ==============================================================
 
 # total time to run sim (unrounded hours)
-HOURS = ORBITAL_PERIOD / 3600
-HOURS = 0.2
-HOURS = 40 / 3600
+# HOURS = ORBITAL_PERIOD / 3600
+# HOURS = 0.2
+HOURS = 180 / 3600
 print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
 TF = int(HOURS * 3600)
@@ -66,7 +66,7 @@ STATE_SPACE_DIMENSION = 7
 MEASUREMENT_SPACE_DIMENSION = 6
 
 # whether to generate new pySOL data or not
-GENERATE_NEW = False
+GENERATE_NEW = True
 # csv to get pre-generated pysol b field from
 CSV_FILE = "1_orbit_half_second" # .5 dt
 # CSV_FILE = "1_orbit_tenth_second" # .1 dt
@@ -93,7 +93,7 @@ GYRO_WORKING = True
 SIMULATING = True
 # option to only highlight orbit path with new cams + images
 cubes_path_no_cams = False
-render_images = False
+render_images = True
 two_cams = True
 # whether our cams should be tilted and not ram pointed
 IDEAL_TILT = False
@@ -137,8 +137,8 @@ INCLINATION_RAD = math.radians(ORBITAL_ELEMENTS[3]) # inclination of orbit (radi
 CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
 
 # bang-bang controller gains
-KP = .1
-KD = .1
+KP = .01
+KD = .009
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B
@@ -166,7 +166,7 @@ else:
 print("gain: ", K)
 
 # Max torque for both Torquers
-MAX_VOLTAGE = 5  # Maximum voltage [V]
+MAX_VOLTAGE = 3  # Maximum voltage [V]
 # we have ~1 amp total between all torques
 MAX_CURRENT = .8 / 3  # Maximum current [A]
 RESISTANCE_MAG = 12 # Resistance [Ohm]

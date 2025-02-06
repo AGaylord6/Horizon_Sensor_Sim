@@ -90,9 +90,8 @@ if cubes_path_no_cams:
     render_images = False
 
 if SIMULATING: 
-    render_images = False
     ideal = False
-    # TODO: set pic_interval to every time step?
+    # TODO: set pic_interval to every time step? this might not do anything here lol
 
 # ============== FUNCTIONS =====================================
 
@@ -323,7 +322,7 @@ def create_two_cams(gps, curr_quat, output_dir):
     @params:
         gps (1x3 array): current gps coordinates of satellite
         curr_quat (1x4 array): current orientation of satellite
-        output_dir: full path of location to store images in
+        output_dir (string): full path of location to store images in
     @returns:
         image1 (24x32 array): rendered image
         image2 
@@ -351,27 +350,32 @@ def create_two_cams(gps, curr_quat, output_dir):
     # orient our cameras towards current orientation and render images
     quat_rotate(first_cam, curr_quat, second_cam)
 
-    # set file name for first cam
-    render_prefix = os.path.join(output_dir, f"{first_cam}_IR_first")
-    mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
-    # render first earth horizon sensor (EHS)
-    mc.arnoldRender(camera=first_cam, render=True)
+    if render_images:
+    
+        # set file name for first cam
+        render_prefix = os.path.join(output_dir, f"{first_cam}_IR_first")
+        mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
+        # render first earth horizon sensor (EHS)
+        mc.arnoldRender(camera=first_cam, render=True)
+    
+        # set file name for second cam
+        render_prefix = os.path.join(output_dir, f"{first_cam}_IR_second")
+        mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
+        # render second earth horizon sensor (EHS)
+        mc.arnoldRender(camera=second_cam, render=True)
+    
+        # fetch our recently rendered images with openCV
+        # Construct the absolute path to the image
+        image_path = os.path.join(output_dir, f"{first_cam}_IR_first_1.png")
+        # read our image
+        image1 = cv2.imread(image_path)
+        image_path = os.path.join(output_dir, f"{first_cam}_IR_second_1.png")
+        image2 = cv2.imread(image_path)
+    
+        return image1, image2
 
-    # set file name for second cam
-    render_prefix = os.path.join(output_dir, f"{first_cam}_IR_second")
-    mc.setAttr("defaultRenderGlobals.imageFilePrefix", render_prefix, type="string")
-    # render second earth horizon sensor (EHS)
-    mc.arnoldRender(camera=second_cam, render=True)
-
-    # fetch our recently rendered images with openCV
-    # Construct the absolute path to the image
-    image_path = os.path.join(output_dir, f"{first_cam}_IR_first_1.png")
-    # read our image
-    image1 = cv2.imread(image_path)
-    image_path = os.path.join(output_dir, f"{first_cam}_IR_second_1.png")
-    image2 = cv2.imread(image_path)
-
-    return image1, image2
+    else:
+        return -1, -1
 
 
 def main(oe):
@@ -439,18 +443,19 @@ def main(oe):
         # protocal that replaces run_b_dot_sim for ehs simulator
         if SIMULATING and i != 0:
 
-            # generate ideal state based on last
+            # generate ideal state based on last so that we can better estimate sensor data
             ideal_state = sim.find_ideal(i)
             
-            # generate fake sensor data in body frame based on last state
+            # generate fake sensor data in body frame based on ideal guess
             sim.generateData_step(ideal_state, i)
 
             if not cubes_path_no_cams: # i % pic_interval == 0 and 
                 # generate ehs, render image, and fetch from dir
                 image1, image2 = create_two_cams(element, ideal_state[:4], output_dir)
 
-                # process our images and store results in mag_sat
-                sim.process_images(image1, image2)
+                if render_images:
+                    # process our images and store results in mag_sat
+                    sim.process_images(image1, image2)
 
             # check what protocol we should be in and update state
             sim.mag_sat.state = sim.check_state()
@@ -466,7 +471,7 @@ def main(oe):
             sim.totalPower[i] = sim.power_output[i][0] + sim.power_output[i][1] + sim.power_output[i][2]
 
         if cubes_path_no_cams and i % (DT * 3000) == 0: # 200 for dt = .5
-            # generate cubes that show orbit
+            # generate cubes every so often that show orbit
             mc.polyCube(name = "orbit" + str(i))
             mc.move(element[0], element[1], element[2])
             mc.scale(.3,.3,.3)

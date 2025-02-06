@@ -69,7 +69,7 @@ def normalize(v):
         norm = np.linalg.norm(v)
         if norm == 0: 
             return v
-        return v / norm
+        return np.array(v / norm)
 
 
 def quaternion_rotation_matrix(Q):

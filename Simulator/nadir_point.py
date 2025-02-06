@@ -9,6 +9,7 @@ Calls image processing to find orientation and PID to move us towards desired or
 
 import math
 import numpy as np
+# import quaternion
 from Horizon_Sensor_Sim.Simulator.image_processing import *
 from Horizon_Sensor_Sim.Simulator.BangBang import BangBang
 from Horizon_Sensor_Sim.Simulator.all_EOMs import normalize
@@ -38,22 +39,41 @@ def nadir_point(mag_sat):
     '''
     Given the current state of the satellite (with image processing already stored in cam1 and cam2 objects),
     try to center our cams and achieve nadir (earth) pointing
+    Note: quaternions are based on the center of the image (which is [1, 0, 0, 0])
 
     @params:
         mag_sat (Magnetorquer_satellite object): encapsulates current state of our cubesat
     '''
+
+    # TODO: handle when 1 cam is upside down (want to rotate through earth)
     
+    # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)
     pitch1 = math.radians(mag_sat.cam1.pitch)
+    q1 = normalize(euler_to_quat(roll1, pitch1, 0.0))
 
-    # Current orientation quaternion
-    current_orientation = normalize(euler_to_quat(roll1, pitch1, 0.0))
+    # create quaternion from second EHS
+    roll2 = math.radians(mag_sat.cam2.roll)
+    pitch2 = math.radians(mag_sat.cam2.pitch)
+    q2 = normalize(euler_to_quat(roll2, pitch2, 0.0))
 
-    # define target orientation as 20 degrees pitched up (everything else = 0)
-    target_orientation = normalize(euler_to_quat(0.0, 0.436, 0.0))
+    current_orientation = q1
+
+    # current_orientation = np.array([1.0, 0.0,0.0,0.0])
+
+    # define target orientation as ~20 degrees pitched up (everything else = 0)
+    # if current quat is set to [1, 0, 0, 0], this incites a constant angular y velocity
+    # target_orientation = normalize(euler_to_quat(0.0, math.radians(23), 0.0))
+
+    # try to even the two cams??
+    target_orientation = normalize(euler_to_quat((roll1+roll2)/2, (pitch1+pitch2)/2, 0.0))
+    # "slerp" is a method of getting midpoint of quaternions but couldn't get working
+    # target_quaternion = np.quaternion.slerp_evaluate(q1, q2, 0.5)
+
     # print("target: ", target_orientation)
     # print("current: ", current_orientation)
 
+    # get voltages required to move us towards target quaternion
     voltage = BangBang(current_orientation, target_orientation, mag_sat)
 
     return voltage

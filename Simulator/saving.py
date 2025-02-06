@@ -111,6 +111,10 @@ def savePDF(outputFile, pngDir, sim):
     eulerText = f"""Our filtered orientation represented by Euler Angles (counterclockwise rotation about x, y, z). Can bug out sometimes. Near 180 degrees (pi) is the same as zero. """
     pdf.multi_cell(0, 5, eulerText, 0, 'L')
     pdf.image(os.path.join(pngDirectory, "Euler.png"), x=x_offset, y=pdf.get_y(), w=180)
+
+    pdf.ln(y_pic_offset)
+
+    pdf.image(os.path.join(pngDirectory, "Voltages.png"), x = x_offset, y = pdf.get_y(), w = 180)
     
     pdf.add_page()
 
@@ -140,6 +144,9 @@ Orbital elments: {ORBITAL_ELEMENTS}
     These define our simulated orbit (see sol_sim.py in PySOL for more info)
 
 B-dot proportional gain: k = {sim.mag_sat.mags[0].k}
+
+Bang-Bang proportional gain: kp = {sim.mag_sat.kp}
+Bang-Bang derivative gain: kd = {sim.mag_sat.kd}
 
 Satellite info:
 

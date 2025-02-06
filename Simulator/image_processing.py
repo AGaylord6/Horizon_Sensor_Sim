@@ -147,7 +147,7 @@ def processImage(image=None, degree=1):
     # print("number of edge pixels: ", len(coordinates))
 
     if len(edge_coordinates) == 0:
-        print("No edge pixels found!")
+        # print("No edge pixels found!")
         return -1, -1, 0
 
     x = edge_coordinates[:, 0]
