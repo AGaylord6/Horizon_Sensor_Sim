@@ -137,8 +137,10 @@ INCLINATION_RAD = math.radians(ORBITAL_ELEMENTS[3]) # inclination of orbit (radi
 CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
 
 # bang-bang controller gains
-KP = .01
+KP = .01 # for bang-bang
 KD = .009
+KP = 1e3 # for normal conversion
+KD = .9e3
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B

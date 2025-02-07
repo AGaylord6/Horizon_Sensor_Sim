@@ -286,7 +286,7 @@ class Simulator():
             # count to see how long we've been waiting for??
         elif self.mag_sat.state == "point":
             # check if we lost horizon--move to search
-            if (0.0 <= self.mag_sat.cam1.alpha <= 0.03) or (0.0 <= self.mag_sat.cam2.alpha <= 0.03):
+            if (0.0 <= self.mag_sat.cam1.alpha <= 0.05) or (0.0 <= self.mag_sat.cam2.alpha <= 0.05):
                 return "search"
             else:
                 return "point"

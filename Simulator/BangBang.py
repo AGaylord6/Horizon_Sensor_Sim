@@ -44,16 +44,16 @@ def BangBang (current, target, mag_sat):
     # m_unit = normalize(m)
 
     # convert magnetic moment to voltage
-    # voltage = mag_sat.momentToVoltage(m)
+    voltage = mag_sat.momentToVoltage(m)
 
     # OR, just scale our max voltage according to the magnitude of the magnetic moment
     # voltage = MAX_VOLTAGE * m_unit
 
     # OR, compute the scaling factor to make the largest component equal to MAX_VOLTAGE
-    largest_component = np.max(np.abs(m))
-    scaling_factor = MAX_VOLTAGE / largest_component
+    # largest_component = np.max(np.abs(m))
+    # scaling_factor = MAX_VOLTAGE / largest_component
     
-    voltage = m * scaling_factor
+    # voltage = m * scaling_factor
     
 
     return voltage

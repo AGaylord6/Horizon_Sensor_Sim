@@ -46,6 +46,13 @@ def nadir_point(mag_sat):
     '''
 
     # TODO: handle when 1 cam is upside down (want to rotate through earth)
+    #   they can be facing different directions because the FOV's overlap
+
+    # if upside down, rotate hard through Y (or trigged axis of fullest edge -- or roll!) of one pointing more towards earth?
+
+    # convert to normal voltage + average angles if near nadir?
+
+    # favor cam that sees more of earth?
     
     # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)
@@ -63,10 +70,11 @@ def nadir_point(mag_sat):
 
     # define target orientation as ~20 degrees pitched up (everything else = 0)
     # if current quat is set to [1, 0, 0, 0], this incites a constant angular y velocity
-    # target_orientation = normalize(euler_to_quat(0.0, math.radians(23), 0.0))
+    # ALPHA$ method
+    target_orientation = normalize(euler_to_quat(0.0, math.radians(23), 0.0))
 
-    # try to even the two cams??
-    target_orientation = normalize(euler_to_quat((roll1+roll2)/2, (pitch1+pitch2)/2, 0.0))
+    # try to even the two cams if near nadir pointing
+    # target_orientation = normalize(euler_to_quat((roll1+roll2)/2, (pitch1+pitch2)/2, 0.0))
     # "slerp" is a method of getting midpoint of quaternions but couldn't get working
     # target_quaternion = np.quaternion.slerp_evaluate(q1, q2, 0.5)
 
