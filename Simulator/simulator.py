@@ -132,7 +132,7 @@ class Simulator():
     def propagate_step(self, i):
         '''
         Based on our last state and voltage output from our controls (voltages[i]), progate through our EOMs to get the next state
-        Populates self.states[i], allowing us to generate realistic data
+        Populates self.states[i], our current current orientation and velocity at the end of the timestep
         '''
 
         # quat, velocity = propagate(self.states[i-1][:4], self.states[i-1][4:], self.mag_sat, self.currents[i-1], self.dt, self, i)
@@ -165,9 +165,9 @@ class Simulator():
 
         # calculate power output of magnetorquers = current output * operational voltage
         # power = Watts being used at this particular time
-        # power = np.abs(MAX_VOLTAGE * currents)
+        power = np.abs(MAX_VOLTAGE * currents)
         # or V^2 / R??
-        power = np.abs(self.voltages[i] * self.voltages[i] / RESISTANCE_MAG)
+        # power = np.abs(self.voltages[i] * self.voltages[i] / RESISTANCE_MAG)
         
         # store sim data for this iteration
         self.power_output[i] = np.array(power)
@@ -239,7 +239,7 @@ class Simulator():
         # print("alphas: {} {}".format(self.mag_sat.cam1.alpha, self.mag_sat.cam2.alpha))
 
 
-    def check_state(self):
+    def check_state(self, i):
         '''
         Checks current state of our mag_sat and updates if requirements are met
         If detumbling, check threshold speed

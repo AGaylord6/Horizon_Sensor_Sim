@@ -458,7 +458,7 @@ def main(oe):
                     sim.process_images(image1, image2)
 
             # check what protocol we should be in and update state
-            sim.mag_sat.state = sim.check_state()
+            sim.mag_sat.state = sim.check_state(i)
 
             # decide voltage for self.voltages[i] (depending on state)
             sim.controls(i)

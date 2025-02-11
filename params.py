@@ -125,12 +125,18 @@ ir_earth_group = "earth_IR"
 # ================  CUBESAT SYSTEM  ======================================================
 
 # updated NearSpace intertia tensor of Cubesat body (lbs * in^2)
-CUBESAT_BODY_INERTIA = np.array([[3.02,-0.02,0.01], 
-                                [-0.02,4.13,-0.01],
-                                [0.01,-0.01,1.96]]) 
+# CUBESAT_BODY_INERTIA = np.array([[3.02,-0.02,0.01], 
+                                # [-0.02,4.13,-0.01],
+                                # [0.01,-0.01,1.96]]) 
+# CAD intertia (ounces * in^2)
+CUBESAT_BODY_INERTIA = np.array([[250.101,4.092,0.637], 
+                                [4.092,335.329,1.243],
+                                [0.637,1.243,151.208]]) 
+# convert to kg * m^2 from ounces * in^2
+CUBESAT_BODY_INERTIA = CUBESAT_BODY_INERTIA * 1.82899783e-5
 
 # Body inertia conversion to kg * m^2
-CUBESAT_BODY_INERTIA = CUBESAT_BODY_INERTIA * 0.00029263941 
+# CUBESAT_BODY_INERTIA = CUBESAT_BODY_INERTIA * 0.00029263941
 CUBESAT_BODY_INERTIA_INVERSE = np.linalg.inv(CUBESAT_BODY_INERTIA)
 INCLINATION_RAD = math.radians(ORBITAL_ELEMENTS[3]) # inclination of orbit (radians)
 
