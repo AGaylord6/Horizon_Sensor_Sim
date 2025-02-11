@@ -49,10 +49,9 @@ def nadir_point(mag_sat):
     #   they can be facing different directions because the FOV's overlap
 
     # if upside down, rotate hard through Y (or trigged axis of fullest edge -- or roll!) of one pointing more towards earth?
+    #   or just base on one that has earth in bottom of horizon
 
-    # convert to normal voltage + average angles if near nadir?
-
-    # favor cam that sees more of earth?
+    # observation: one can be near nadir while other sees entirely earth (somehow)
     
     # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)
@@ -64,14 +63,17 @@ def nadir_point(mag_sat):
     pitch2 = math.radians(mag_sat.cam2.pitch)
     q2 = normalize(euler_to_quat(roll2, pitch2, 0.0))
 
-    current_orientation = q1
+    # edges are top, right, bottom, left intensities (0-1)
+    if mag_sat.cam1.edges[0] > mag_sat.cam1.edges[2] and mag_sat.cam2.edges[0] < mag_sat.cam2.edges[2]:
+        # if first cam is upside down (bottom less than top) and second if not
+        current_orientation = q2
+    else:
+        current_orientation = q1
 
-    # current_orientation = np.array([1.0, 0.0,0.0,0.0])
-
-    # define target orientation as ~20 degrees pitched up (everything else = 0)
+    # define target orientation as ~24 degrees pitched up (everything else = 0)
     # if current quat is set to [1, 0, 0, 0], this incites a constant angular y velocity
-    # ALPHA$ method
-    target_orientation = normalize(euler_to_quat(0.0, math.radians(23), 0.0))
+    # ALPHA$ method (alpha% = 70.2%)
+    target_orientation = normalize(euler_to_quat(0.0, math.radians(24), 0.0))
 
     # try to even the two cams if near nadir pointing
     # target_orientation = normalize(euler_to_quat((roll1+roll2)/2, (pitch1+pitch2)/2, 0.0))
@@ -82,6 +84,7 @@ def nadir_point(mag_sat):
     # print("current: ", current_orientation)
 
     # get voltages required to move us towards target quaternion
+    # current_orientation = np.array([1.0, 0.0,0.0,0.0])
     voltage = BangBang(current_orientation, target_orientation, mag_sat)
 
     return voltage

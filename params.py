@@ -50,7 +50,7 @@ CONSTANT_B_FIELD_MAG = np.array([19.42900375, 1.74830615, 49.13746833])
 # total time to run sim (unrounded hours)
 # HOURS = ORBITAL_PERIOD / 3600
 # HOURS = 0.2
-HOURS = 180 / 3600
+HOURS = 300 / 3600
 print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
 TF = int(HOURS * 3600)
@@ -139,8 +139,8 @@ CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
 # bang-bang controller gains
 KP = .01 # for bang-bang
 KD = .009
-KP = 1e3 # for normal conversion
-KD = .9e3
+KP = .3e3 # for normal conversion
+KD = .3e3
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B
@@ -168,9 +168,9 @@ else:
 print("gain: ", K)
 
 # Max torque for both Torquers
-MAX_VOLTAGE = 3  # Maximum voltage [V]
+MAX_VOLTAGE = 5  # Maximum voltage [V]
 # we have ~1 amp total between all torques
-MAX_CURRENT = .8 / 3  # Maximum current [A]
+MAX_CURRENT = 1 / 3  # Maximum current [A]
 RESISTANCE_MAG = 12 # Resistance [Ohm]
 INDUCTANCE_MAG = 146 # Inductance [H]
 

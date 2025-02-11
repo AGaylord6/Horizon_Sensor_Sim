@@ -449,7 +449,7 @@ def main(oe):
             # generate fake sensor data in body frame based on ideal guess
             sim.generateData_step(ideal_state, i)
 
-            if not cubes_path_no_cams: # i % pic_interval == 0 and 
+            if not cubes_path_no_cams and i % 2 == 0: # i % pic_interval == 0 and 
                 # generate ehs, render image, and fetch from dir
                 image1, image2 = create_two_cams(element, ideal_state[:4], output_dir)
 

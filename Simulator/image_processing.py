@@ -44,7 +44,7 @@ def processImage(image=None, degree=1):
         roll (float): rotation about x axis. How tilted each line is. 0 = flat horizon. (degrees)
         pitch (float): angle of pointing up and down based on center of image. 0 = horizon is centered. (degrees)
         alpha (float): the percentage (as a decimal) of the image filled by the Earth
-        edges (1x4 array): 
+        edges (1x4 array): top, right, bottom, left edges respectively. All values between [0-1] representing how much earth is on that edge
     '''
 
     # ============ IMAGE GENERATION ================================
@@ -89,7 +89,7 @@ def processImage(image=None, degree=1):
 
     if img is None:
         print("Image not loaded correctly!")
-        return -1, -1, 0.0
+        return -1, -1, 0.0, [-1, -1, -1, -1]
     
     # ============= IMAGE PROCESSING =================================
 
@@ -148,7 +148,7 @@ def processImage(image=None, degree=1):
 
     if len(edge_coordinates) == 0:
         # print("No edge pixels found!")
-        return -1, -1, 0
+        return -1, -1, 0, [-1, -1, -1, -1]
 
     x = edge_coordinates[:, 0]
     y = edge_coordinates[:, 1]
@@ -191,6 +191,9 @@ def processImage(image=None, degree=1):
         total_right_brightness += float(smoothed_img[row][IMAGE_WIDTH-1])
     right_average_brightness = total_right_brightness/IMAGE_HEIGHT
     # print("Right edge brightness is ", right_average_brightness)
+
+    edges = [top_average_brightness, right_average_brightness, bottom_average_brightness, left_average_brightness]
+    edges = edges / np.linalg.norm(edges)
 
     # find the percentage of the image that is the Earth (alpha)
     alpha = 0
@@ -311,7 +314,7 @@ def processImage(image=None, degree=1):
     # axs[2, 2].legend()
     # plt.show()
 
-    return roll, pitch, alpha
+    return roll, pitch, alpha, edges
 
 
 if __name__ == "__main__":

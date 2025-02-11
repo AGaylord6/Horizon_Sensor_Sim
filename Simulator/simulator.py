@@ -234,8 +234,8 @@ class Simulator():
         Takes in our two simulated EHS images and stores the info in mag_sat object
         '''
 
-        self.mag_sat.cam1.roll, self.mag_sat.cam1.pitch, self.mag_sat.cam1.alpha = processImage(image1)
-        self.mag_sat.cam2.roll, self.mag_sat.cam2.pitch, self.mag_sat.cam2.alpha = processImage(image2)
+        self.mag_sat.cam1.roll, self.mag_sat.cam1.pitch, self.mag_sat.cam1.alpha, self.mag_sat.cam1.edges = processImage(image1)
+        self.mag_sat.cam2.roll, self.mag_sat.cam2.pitch, self.mag_sat.cam2.alpha, self.mag_sat.cam2.edges = processImage(image2)
         # print("alphas: {} {}".format(self.mag_sat.cam1.alpha, self.mag_sat.cam2.alpha))
 
 
@@ -257,8 +257,10 @@ class Simulator():
             angularY = abs(self.states[i][5])
             angularZ = abs(self.states[i][6])
 
-            if(self.finishedTime == -1):
-                if (thresholdLow <= angularX <= thresholdHigh) and (thresholdLow <= angularY <= thresholdHigh) and (thresholdLow <= angularZ <= thresholdHigh):
+            # if we're below threshold, move to horizon search
+            if (thresholdLow <= angularX <= thresholdHigh) and (thresholdLow <= angularY <= thresholdHigh) and (thresholdLow <= angularZ <= thresholdHigh):
+
+                if(self.finishedTime == -1):
                     # record first time we hit "detumbled" threshold (seconds)
                     self.finishedTime = i*DT
                     
@@ -266,22 +268,20 @@ class Simulator():
                     # Total Energy is calculated as a "Rieman Sum" of the total power used at each time step multiplied by the time step
                     for step in range(i):
                         self.energy = self.energy + self.totalPower[step]*self.dt
-                    
-                    # move to horizon searching protocol
-                    return "search"
-            else:
+                
+                # move to horizon searching protocol
                 return "search"
 
             return "detumble"
 
         elif self.mag_sat.state == "search":
-            # check last image results--stored in mag_sat? Cam object to store results?
             # if both see horizon, move to point
             if self.mag_sat.cam1.alpha >= 0.0 and self.mag_sat.cam2.alpha >= 0.0:
                 # print("SWITCH TO POINT")
                 return "point"
             else:
-                return "search"
+                # if we don't see the earth, check that we're below detumble threshold
+                return "detumble"
 
             # count to see how long we've been waiting for??
         elif self.mag_sat.state == "point":
@@ -308,7 +308,11 @@ class Simulator():
             self.voltages[i] = np.zeros((3))
         elif self.mag_sat.state == "point":
             # process images and try to center cams
-            self.voltages[i] = np.clip(nadir_point(self.mag_sat), -MAX_VOLTAGE, MAX_VOLTAGE)
+            if i % 2 == 0:
+                # only take an image every other timestep
+                self.voltages[i] = np.clip(nadir_point(self.mag_sat), -MAX_VOLTAGE, MAX_VOLTAGE)
+            else:
+                self.voltages[i] = self.voltages[i - 1]
 
 
     def run_b_dot_sim(self):
