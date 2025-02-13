@@ -34,6 +34,7 @@ def euler_to_quat(roll, pitch, yaw):
     
     return np.array([qw, qx, qy, qz])
 
+IDEAL_EULERS = normalize(euler_to_quat(0.0, math.radians(24), 0.0))
 
 def nadir_point(mag_sat):
     '''
@@ -51,7 +52,7 @@ def nadir_point(mag_sat):
     # if upside down, rotate hard through Y (or trigged axis of fullest edge -- or roll!) of one pointing more towards earth?
     #   or just base on one that has earth in bottom of horizon
 
-    # observation: one can be near nadir while other sees entirely earth (somehow)
+    # do we need to account for yaw sometime? Is that why one axis is always spinning?
     
     # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)
@@ -63,9 +64,13 @@ def nadir_point(mag_sat):
     pitch2 = math.radians(mag_sat.cam2.pitch)
     q2 = normalize(euler_to_quat(roll2, pitch2, 0.0))
 
+    # weight 1 = cam1 trusted, weight 2 = cam2 trusted
+    weight = 0.5
+
     # edges are top, right, bottom, left intensities (0-1)
-    if mag_sat.cam1.edges[0] > mag_sat.cam1.edges[2] and mag_sat.cam2.edges[0] < mag_sat.cam2.edges[2]:
-        # if first cam is upside down (bottom less than top) and second if not
+    if (mag_sat.cam1.edges[0] > mag_sat.cam1.edges[2] and mag_sat.cam2.edges[0] < mag_sat.cam2.edges[2]) or (mag_sat.cam1.alpha >= 0.95):
+        # if first cam is upside down (bottom less than top) and second is not
+        # or first cam is seeing all earth
         current_orientation = q2
     else:
         current_orientation = q1
@@ -73,7 +78,7 @@ def nadir_point(mag_sat):
     # define target orientation as ~24 degrees pitched up (everything else = 0)
     # if current quat is set to [1, 0, 0, 0], this incites a constant angular y velocity
     # ALPHA$ method (alpha% = 70.2%)
-    target_orientation = normalize(euler_to_quat(0.0, math.radians(24), 0.0))
+    target_orientation = IDEAL_EULERS
 
     # try to even the two cams if near nadir pointing
     # target_orientation = normalize(euler_to_quat((roll1+roll2)/2, (pitch1+pitch2)/2, 0.0))

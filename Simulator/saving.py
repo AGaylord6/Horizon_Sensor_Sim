@@ -108,13 +108,22 @@ def savePDF(outputFile, pngDir, sim):
 
     pdf.add_page()
     
-    eulerText = f"""Our filtered orientation represented by Euler Angles (counterclockwise rotation about x, y, z). Can bug out sometimes. Near 180 degrees (pi) is the same as zero. """
-    pdf.multi_cell(0, 5, eulerText, 0, 'L')
-    pdf.image(os.path.join(pngDirectory, "Euler.png"), x=x_offset, y=pdf.get_y(), w=180)
+    pdf.image(os.path.join(pngDirectory, "Voltages.png"), x = x_offset, y = pdf.get_y(), w = 180)
 
     pdf.ln(y_pic_offset)
 
-    pdf.image(os.path.join(pngDirectory, "Voltages.png"), x = x_offset, y = pdf.get_y(), w = 180)
+    # eulerText = f"""Our filtered orientation represented by Euler Angles (counterclockwise rotation about x, y, z). Can bug out sometimes. Near 180 degrees (pi) is the same as zero. """
+    # pdf.multi_cell(0, 5, eulerText, 0, 'L')
+    # pdf.image(os.path.join(pngDirectory, "Euler.png"), x=x_offset, y=pdf.get_y(), w=180)
+    pdf.image(os.path.join(pngDirectory, "Pitch_Roll.png"), x = x_offset, y = pdf.get_y(), w = 180)
+    
+    pdf.add_page()
+
+    pdf.image(os.path.join(pngDirectory, "Edges1.png"), x = x_offset, y = pdf.get_y(), w = 180)
+
+    pdf.ln(y_pic_offset)
+    
+    pdf.image(os.path.join(pngDirectory, "Edges2.png"), x = x_offset, y = pdf.get_y(), w = 180)
     
     pdf.add_page()
 

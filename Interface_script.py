@@ -425,6 +425,7 @@ def main(oe):
         # create 3 Magnetorquer objects to store in Magnetorquer_Sat object
         mag1 = Magnetorquer(n = FERRO_NUM_TURNS, area = FERRO_AREA, k = K, epsilon = FERRO_EPSILON)
         mag2 = Magnetorquer(n = FERRO_NUM_TURNS, area = FERRO_AREA, k = K, epsilon = FERRO_EPSILON)
+        # mag3 = Magnetorquer(n = FERRO_NUM_TURNS, area = FERRO_AREA, k = K, epsilon = FERRO_EPSILON)
         mag3 = Magnetorquer(n = AIR_NUM_TURNS, area = AIR_AREA, k = K, epsilon = 1)
         mag_array = np.array([mag1, mag2, mag3])
 
@@ -453,9 +454,9 @@ def main(oe):
                 # generate ehs, render image, and fetch from dir
                 image1, image2 = create_two_cams(element, ideal_state[:4], output_dir)
 
-                if render_images:
+                if render_images: 
                     # process our images and store results in mag_sat
-                    sim.process_images(image1, image2)
+                    sim.process_images(image1, image2, i)
 
             # check what protocol we should be in and update state
             sim.mag_sat.state = sim.check_state(i)
