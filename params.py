@@ -15,7 +15,7 @@ DEGREES = False
 QUAT_INITIAL = np.array([1.0, 1.0, 0.0, 0.0])
 # we want to start with 15 degrees/s in each axis
 # VELOCITY_INITIAL = np.array([15.0,-10.0,10.0])
-VELOCITY_INITIAL = np.array([.1, -.1, 0.0])
+VELOCITY_INITIAL = np.array([0.0, 0.0, 0.0])
 # convert to rad/s
 if not DEGREES:
     VELOCITY_INITIAL *= math.pi / 180
@@ -31,7 +31,7 @@ EARTH_RADIUS = 6378
 # see generate_orbit_data in sol_sim.py for more 
 # this gives us near-polar, sun-synchronous LEO orbit (according to chatGPT)
 # ORBITAL_ELEMENTS = np.array([0, 6800, 0.0000922, 97.5, 150, 0])
-ORBITAL_ELEMENTS = [0, EARTH_RADIUS + 450, 0.0000922, 90, 90, 0]
+ORBITAL_ELEMENTS = [90, EARTH_RADIUS + 450, 0.0000922, 90, 90, 0]
 
 # standard gravitational parameter for earth (m^3/s^2)
 GRAVITY_EARTH = 3.986004418e14

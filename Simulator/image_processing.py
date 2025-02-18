@@ -230,7 +230,7 @@ def processImage(image=None, degree=1):
     x_c = IMAGE_WIDTH / 2
     y_c = IMAGE_HEIGHT / 2
     # find shortest perpendicular distance between center of image and horizon line (pixels)
-    p = - (a * x_c - y_c + b) / math.sqrt(a**2 + 1) # gives us positives/negatives
+    # p = - (a * x_c - y_c + b) / math.sqrt(a**2 + 1) # gives us positives/negatives
     # print("Pixels from center to closest point on horizon line: ", p)
 
     # distance to horizon from nadir
@@ -240,79 +240,23 @@ def processImage(image=None, degree=1):
     # O = math.degrees(np.arctan2(c, EARTH_RADIUS))
     # print("Offset angle: ", O)
     # angle from center of image to closest point on horizon line. NOTE: altitude + mount tilt can be included to convert from camera's frame
-    pitch = p * PIXEL_HEIGHT # - O
+    # pitch = p * PIXEL_HEIGHT # - O
     # print("PITCH: ", pitch)
     # this is equivalent to multiplying by pixel height, but uses trig instead
     # pitch = math.degrees(math.atan(p / FOCAL_LENGTH)) # - O
 
-    # example from south african article (IGNORE--IT SUCKS/IS BUGGED)
-    '''
-    # find alpha (distance from A to O) (center of image to closest point on horizon line) (meters?)
-    # horizon_to_center = math.cos(math.radians(roll)) * b
-    # print("south african distance from center to horizon: ", horizon_to_center)
-    # south_african_pitch = math.degrees(-math.atan(horizon_to_center / FOCAL_LENGTH))
-    # print("South african pitch: (sucks lmao)", south_african_pitch)
+    # Compute the midpoint of the detected horizon line
+    line_midpoint_x = np.mean(x)
+    line_midpoint_y = np.mean(y)
 
-    # angle from figure 3.2 in South African article, used to find earth disc radius
-    # disc_angle = np.arcsin(EARTH_RADIUS / (EARTH_RADIUS + HEIGHT))
-    # disc_radius_earth = EARTH_RADIUS * np.cos(disc_angle)
-    # radius of earth disc on image plane
-    # disc_radius_pic = FOCAL_LENGTH * .001 * np.tan(disc_angle)
-    # radius of earth disc on image plane in pixels
-    # disc_radius_pixels = disc_radius_pic / 220e-6
-    # print("Radius of Earth disc on image plane: ", disc_radius_pic)
-    # print("pixels earth would take up based on 220 um distance between pixels: ", disc_radius_pixels)
-
-    # if horizon angle is added (boresight not pointed at horizon), disc will be vertically offset by some pixels
-    # pitch_offset = FOCAL_LENGTH * .001 * np.tan(math.radians(pitch))
-    # pitch_offset_pixels = pitch_offset / 220e-6
-    # print("Pitch offset: ", pitch_offset_pixels)
-
-    # disc center coordinates based on pitch and roll (CENTER OF CIRCLE!!)
-    # x_0 = (pitch_offset_pixels + disc_radius_pixels) * np.sin(math.radians(roll))
-    # y_0 = - (pitch_offset_pixels + disc_radius_pixels) * np.cos(math.radians(roll))
-    # print("Center of circle coords: {}, {}".format(x_0, y_0))
-    '''
-
-    # Display the results!!! 3x3 grid
-    # fig, axs = plt.subplots(3, 3, figsize=(10, 7), sharex=True, sharey=True)
-    # axs[0, 0].imshow(gray_img, cmap='gray')
-    # axs[0, 0].set_title('Original', fontsize=10)
-    # axs[0, 0].text(29, 17, "Roll: {}\nPitch: {}\nAlpha: {}%".format(round(roll, 2), round(pitch, 2), round(alpha*100, 2)), fontsize=10)
-
-    # axs[0, 1].imshow(noisy_img, cmap='gray')
-    # axs[0, 1].set_title('Noisy', fontsize=10)
-
-    # axs[0, 2].imshow(smoothed_img, cmap='gray')
-    # axs[0, 2].set_title('Blurred', fontsize=10)
-
-    # axs[1, 0].imshow(canny_edges, cmap='gray')
-    # axs[1, 0].set_title('Canny Edge', fontsize=10)
-
-    # axs[1, 1].imshow(sobelxy, cmap='gray')
-    # axs[1, 1].set_title('Sobel Edge', fontsize=10)
-
-    # axs[1, 2].imshow(contrasted_img, cmap='gray')
-    # axs[1, 2].set_title('Contrast Boosted', fontsize=10)
-
-    # axs[2, 0].imshow(canny_edges2, cmap='gray')
-    # axs[2, 0].set_title('Contrast-boosted edge', fontsize=10)    
-
-    # axs[2, 1].imshow(gray_img, cmap='gray')
-    # axs[2, 1].set_title('TODO: custom edge', fontsize=10)
-
-    # # find each point along our fitted horizon lines
-    # x_horizon = np.linspace(min(x), max(x), len(x))
-    # # make sure all line points are within image bounds
-    # y_horizon = np.clip(np.polyval(coef, x_horizon), 0, IMAGE_HEIGHT)
-
-    # axs[2, 2].imshow(gray_img, cmap='gray')
-    # axs[2, 2].set_title('Regression Line', fontsize=10)
-    # # overlay our fitted horizon line
-    # axs[2, 2].plot(x_horizon, y_horizon, color='red', label='Fitted curve')
-    # axs[2, 2].scatter(x, y, color='blue', s=3, label='Edge')
-    # axs[2, 2].legend()
-    # plt.show()
+    # Calculate yaw: Ratio of x-direction offset from center to total width, converted to degrees
+    # Positive = right
+    # yaw_ratio = (line_midpoint_x - x_c) / IMAGE_WIDTH
+    # yaw = yaw_ratio * FOV_x
+    
+    # Calculate pitch: Ratio of y-direction offset from center to total height, converted to degrees
+    pitch_ratio = (y_c - line_midpoint_y) / pic_height
+    pitch = pitch_ratio * cam_FOV_vertical
 
     return roll, pitch, alpha, edges
 
