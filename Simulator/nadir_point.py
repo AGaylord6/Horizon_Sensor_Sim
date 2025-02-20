@@ -34,7 +34,7 @@ def euler_to_quat(roll, pitch, yaw):
     
     return np.array([qw, qx, qy, qz])
 
-IDEAL_EULERS = normalize(euler_to_quat(0.0, math.radians(24), 0.0))
+IDEAL_QUAT = normalize(euler_to_quat(0.0, math.radians(24), 0.0))
 
 def nadir_point(mag_sat):
     '''
@@ -46,13 +46,17 @@ def nadir_point(mag_sat):
         mag_sat (Magnetorquer_satellite object): encapsulates current state of our cubesat
     '''
 
-    # TODO: handle when 1 cam is upside down (want to rotate through earth)
-    #   they can be facing different directions because the FOV's overlap
+    # NOTE: cams can be facing different directions because the FOV's overlap
 
-    # if upside down, rotate hard through Y (or trigged axis of fullest edge -- or roll!) of one pointing more towards earth?
+    # if upside down, rotate hard through Y (or trigged axis of fullest edge -- or roll!) of one pointing more towards earth (to rotate through it)?
     #   or just base on one that has earth in bottom of horizon
 
     # do we need to account for yaw sometime? Is that why one axis is always spinning?
+    # if roll/pitch flips (cam rotates too much), pd will suddenly try to go other way towards 0 (undoing momentum in had previously?)
+    #   want to ensure we're never relying on cam that is rotating too much?
+    #   STAY AWAY FROM CAM THAT IS NEAR TRANSITION
+
+    # need to convert voltage to constant frame depending on which cam we're trusting
     
     # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)
@@ -64,6 +68,24 @@ def nadir_point(mag_sat):
     pitch2 = math.radians(mag_sat.cam2.pitch)
     q2 = normalize(euler_to_quat(roll2, pitch2, 0.0))
 
+    # define target orientation as ~24 degrees pitched up (everything else = 0)
+    # if current quat is set to [1, 0, 0, 0], this incites a constant angular y velocity
+    # ALPHA$ method (alpha% = 70.2%)
+    target_orientation = IDEAL_QUAT
+
+    # try to even the two cams if near nadir pointing
+    # target_orientation = normalize(euler_to_quat((roll1+roll2)/2, (pitch1+pitch2)/2, 0.0))
+    # "slerp" is a method of getting midpoint of quaternions but couldn't get working
+    # target_quaternion = np.quaternion.slerp_evaluate(q1, q2, 0.5)
+
+    # get voltages required to move us towards target quaternion from both cams
+    voltage1 = BangBang(q1, target_orientation, mag_sat)
+
+    voltage2 = BangBang(q2, target_orientation, mag_sat)
+    # define cam1 as truly aligned: therefore, to turn roll counterclockwise (for this cam) we need a negative current
+    # for cam1, a clockwise roll is negative current
+    voltage2 *= -1
+
     # weight 1 = cam1 trusted, weight 2 = cam2 trusted
     weight = 0.5
 
@@ -71,26 +93,21 @@ def nadir_point(mag_sat):
     if (mag_sat.cam1.edges[0] > mag_sat.cam1.edges[2] and mag_sat.cam2.edges[0] < mag_sat.cam2.edges[2]) or (mag_sat.cam1.alpha >= 0.95):
         # if first cam is upside down (bottom less than top) and second is not
         # or first cam is seeing all earth
-        current_orientation = q2
+        voltage = voltage2
+    elif (mag_sat.cam2.alpha < mag_sat.cam1.alpha):
+        # take the cam that's seeing less of earth (further from danger zones..?)
+        # or could take whichever is closer to or further from alpha$...?
+        voltage = voltage2
     else:
-        current_orientation = q1
+        voltage = voltage1
 
-    # define target orientation as ~24 degrees pitched up (everything else = 0)
-    # if current quat is set to [1, 0, 0, 0], this incites a constant angular y velocity
-    # ALPHA$ method (alpha% = 70.2%)
-    target_orientation = IDEAL_EULERS
-
-    # try to even the two cams if near nadir pointing
-    # target_orientation = normalize(euler_to_quat((roll1+roll2)/2, (pitch1+pitch2)/2, 0.0))
-    # "slerp" is a method of getting midpoint of quaternions but couldn't get working
-    # target_quaternion = np.quaternion.slerp_evaluate(q1, q2, 0.5)
-
-    # print("target: ", target_orientation)
-    # print("current: ", current_orientation)
-
-    # get voltages required to move us towards target quaternion
-    # current_orientation = np.array([1.0, 0.0,0.0,0.0])
-    voltage = BangBang(current_orientation, target_orientation, mag_sat)
+    # # edges are top, right, bottom, left intensities (0-1)
+    # if (mag_sat.cam2.edges[0] > mag_sat.cam2.edges[2] and mag_sat.cam1.edges[0] < mag_sat.cam1.edges[2]) or (mag_sat.cam2.alpha >= 0.95):
+    #     # if first cam is upside down (bottom less than top) and second is not
+    #     # or first cam is seeing all earth
+    #     voltage = voltage1
+    # else:
+    #     voltage = voltage2
 
     return voltage
 

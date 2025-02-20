@@ -148,7 +148,13 @@ def processImage(image=None, degree=1):
 
     if len(edge_coordinates) == 0:
         # print("No edge pixels found!")
-        return -1, -1, 0, [-1, -1, -1, -1]
+        if (np.sum(np.array(smoothed_img)) / (IMAGE_WIDTH * IMAGE_HEIGHT)) > 20:
+            # TODO: better way to calculate this?
+            # if no edge is found but we're looking at earth, return alpha = 1
+            return -1, -1, 1.0, [-1, -1, -1, -1]
+        else:
+            # if we only see space, return alpha = 0
+            return -1, -1, 0.0, [-1, -1, -1, -1]
 
     x = edge_coordinates[:, 0]
     y = edge_coordinates[:, 1]
