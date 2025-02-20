@@ -145,8 +145,8 @@ CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
 # bang-bang controller gains
 # KP = .01 # for bang-bang
 # KD = .009
-KP = 2e2 # for normal conversion
-KD = 1.7e2
+KP = 1.5e2 # for normal conversion
+KD = 1.3e2
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B

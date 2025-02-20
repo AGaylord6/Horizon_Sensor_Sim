@@ -57,6 +57,8 @@ def nadir_point(mag_sat):
     #   STAY AWAY FROM CAM THAT IS NEAR TRANSITION
 
     # need to convert voltage to constant frame depending on which cam we're trusting
+    # TODO: define which way +x spin with regards to voltage
+    #       seems that -x is down with respect to cam2
     
     # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)
@@ -86,30 +88,23 @@ def nadir_point(mag_sat):
     # for cam1, a clockwise roll is negative current
     voltage2 *= -1
 
-    # weight 1 = cam1 trusted, weight 2 = cam2 trusted
-    weight = 0.5
+    # weight 1 = cam1 trusted, weight 0 = cam2 trusted
+    weight = 1
 
     # edges are top, right, bottom, left intensities (0-1)
     if (mag_sat.cam1.edges[0] > mag_sat.cam1.edges[2] and mag_sat.cam2.edges[0] < mag_sat.cam2.edges[2]) or (mag_sat.cam1.alpha >= 0.95):
         # if first cam is upside down (bottom less than top) and second is not
         # or first cam is seeing all earth
-        voltage = voltage2
+        weight = 0
     elif (mag_sat.cam2.alpha < mag_sat.cam1.alpha):
         # take the cam that's seeing less of earth (further from danger zones..?)
         # or could take whichever is closer to or further from alpha$...?
-        voltage = voltage2
-    else:
-        voltage = voltage1
+        weight = 0
 
-    # # edges are top, right, bottom, left intensities (0-1)
-    # if (mag_sat.cam2.edges[0] > mag_sat.cam2.edges[2] and mag_sat.cam1.edges[0] < mag_sat.cam1.edges[2]) or (mag_sat.cam2.alpha >= 0.95):
-    #     # if first cam is upside down (bottom less than top) and second is not
-    #     # or first cam is seeing all earth
-    #     voltage = voltage1
-    # else:
-    #     voltage = voltage2
+    # take a weighted sum of the voltages from our 2 cams
+    voltage = weight * voltage1 + (1 - weight) * voltage2
 
-    return voltage
+    return voltage, weight
 
 
 
