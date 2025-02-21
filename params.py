@@ -15,7 +15,7 @@ DEGREES = False
 QUAT_INITIAL = np.array([1.0, 1.0, 0.0, 0.0])
 # we want to start with 15 degrees/s in each axis
 # VELOCITY_INITIAL = np.array([15.0,-10.0,10.0])
-VELOCITY_INITIAL = np.array([.1, -.1, 0.0])
+VELOCITY_INITIAL = np.array([0.0, 0.0, 0.0])
 # convert to rad/s
 if not DEGREES:
     VELOCITY_INITIAL *= math.pi / 180
@@ -31,7 +31,7 @@ EARTH_RADIUS = 6378
 # see generate_orbit_data in sol_sim.py for more 
 # this gives us near-polar, sun-synchronous LEO orbit (according to chatGPT)
 # ORBITAL_ELEMENTS = np.array([0, 6800, 0.0000922, 97.5, 150, 0])
-ORBITAL_ELEMENTS = [0, EARTH_RADIUS + 450, 0.0000922, 90, 90, 0]
+ORBITAL_ELEMENTS = [90, EARTH_RADIUS + 450, 0.0000922, 90, 90, 0]
 
 # standard gravitational parameter for earth (m^3/s^2)
 GRAVITY_EARTH = 3.986004418e14
@@ -50,7 +50,7 @@ CONSTANT_B_FIELD_MAG = np.array([19.42900375, 1.74830615, 49.13746833])
 # total time to run sim (unrounded hours)
 # HOURS = ORBITAL_PERIOD / 3600
 # HOURS = 0.2
-HOURS = 400 / 3600
+HOURS = 600 / 3600
 print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
 TF = int(HOURS * 3600)
@@ -143,10 +143,10 @@ INCLINATION_RAD = math.radians(ORBITAL_ELEMENTS[3]) # inclination of orbit (radi
 CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
 
 # bang-bang controller gains
-KP = .01 # for bang-bang
-KD = .009
-KP = 1.2e2 # for normal conversion
-KD = .9e2
+# KP = .01 # for bang-bang
+# KD = .009
+KP = 1.5e2 # for normal conversion
+KD = 1.3e2
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B

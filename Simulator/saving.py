@@ -87,15 +87,16 @@ def savePDF(outputFile, pngDir, sim):
 
     pdf.add_page()
 
-    pdfHeader(pdf, "Magnetorquer Information")
+    # pdfHeader(pdf, "Magnetorquer Information")
+    # note: removed total power image
 
-    # magText = f"""Magnetorquer results with gain k = {sim.mag_sat.k}"""
-    # TODO: print more info (and magnitude of current, velocity)
-    # pdf.multi_cell(0, 5, magText, 0, 'L')
+    magText = f"""'detumble' = -2, 'search' = -1, 'point' = [0, 1] (based on which cam we're trusting. 1 = cam1, 0 = cam2)"""
+    pdf.multi_cell(0, 5, magText, 0, 'L')
 
-    pdf.image(os.path.join(pngDirectory, "Total_Power_Output.png"), x = x_offset, y = pdf.get_y(), w = 180)
+    pdf.image(os.path.join(pngDirectory, "Mode.png"), x = x_offset, y = pdf.get_y(), w = 180)
 
     pdf.ln(y_pic_offset)
+
     pdf.image(os.path.join(pngDirectory, "Power_Output.png"), x = x_offset, y = pdf.get_y(), w = 180)
 
     pdf.add_page()
@@ -139,7 +140,7 @@ def savePDF(outputFile, pngDir, sim):
 
     infoText = f"""Starting speed: {starting_speed} degrees/s.
 
-Total simulation time: {float(sim.n) * sim.dt / 3600} hours
+Total simulation time: {round(float(sim.n) * sim.dt / 3600, 4)} hours
 
 Orbits completed during simulation: {round((sim.n * sim.dt)/ORBITAL_PERIOD, 4)} orbits.
 

@@ -119,6 +119,10 @@ class Simulator():
         # edge arrays for cam 1 and 2
         self.edges1 = np.zeros((self.n, 4))
         self.edges2 = np.zeros((self.n, 4))
+
+        # what mode we're in for each time step
+        # "detumble" = -2, "search" = -1, "point" = [0, 1] (based on which cam we're trusting. 1 = cam1, 0 = cam2)
+        self.mode = np.zeros((self.n))
         
         # Set the total energy to 0 at the start (joules)
         self.energy = 0
@@ -294,7 +298,7 @@ class Simulator():
             return "detumble"
 
         elif self.mag_sat.state == "search":
-            # if both see horizon, move to point
+            # if both see earth in some capacity (even if one if full), move to pointing
             if self.mag_sat.cam1.alpha >= 0.0 and self.mag_sat.cam2.alpha >= 0.0:
                 # print("SWITCH TO POINT")
                 return "point"
@@ -317,21 +321,26 @@ class Simulator():
         '''
         Based on saved sensor data and current protocol state, generate correct controls voltages
         Voltage for next step is stored in self.voltages[i]
-        
+        Info about what mode we're in is stored in self.mode[i]
         '''
         if self.mag_sat.state == "detumble":
             # oppose angular velocity
             self.voltages[i] = B_dot(self.mag_sat)
+            self.mode[i] = -2
         elif self.mag_sat.state == "search":
             # do nothing while horizon searching, for now
             self.voltages[i] = np.zeros((3))
+            self.mode[i] = -1
         elif self.mag_sat.state == "point":
             # process images and try to center cams
             if i % 2 == 0:
                 # only take an image every other timestep
-                self.voltages[i] = np.clip(nadir_point(self.mag_sat), -MAX_VOLTAGE, MAX_VOLTAGE)
+                # get voltage output and what mode we're in based on image results
+                self.voltages[i], self.mode[i] = nadir_point(self.mag_sat)
+                self.voltages[i] = np.clip(self.voltages[i], -MAX_VOLTAGE, MAX_VOLTAGE)
             else:
                 self.voltages[i] = self.voltages[i - 1]
+                self.mode[i] = self.mode[i - 1]
 
 
     def run_b_dot_sim(self):
@@ -392,6 +401,7 @@ class Simulator():
         also also plots the euler angle of our state (with respect to our starting state)
         '''
         plotState_xyz(self.states)
+        plot_multiple_lines([self.mode], ["Mode"], "Satellite Mode", fileName="Mode.png", ylabel="Mode")
         # unpack the filtered quaternion and convert it to euler angles
         # use the error quaternion between our starting state and current state to base angle off of starting point
         # plotAngles(np.array([euler_from_quaternion(*delta_q(a[:4], QUAT_INITIAL)) for a in self.states]), "Euler angles", fileName="Euler.png")
@@ -405,7 +415,7 @@ class Simulator():
         plot_xyz(self.currents, "Currents", fileName="Currents.png", ylabel="Current (Amps)")
         plot_xyz(self.torques, "Torques", fileName="Torques.png", ylabel="Torque (N*m)")
         plot_xyz(self.power_output, "Power Usage", fileName="Power_Output.png", ylabel="Power (Watts)")
-        plot_multiple_lines([self.totalPower],["Total Power"], "Total Power Output",fileName="Total_Power_Output.png",ylabel="Power (Watts)")
+        # plot_multiple_lines([self.totalPower],["Total Power"], "Total Power Output",fileName="Total_Power_Output.png",ylabel="Power (Watts)")
 
 
     def plot_and_viz_results(self):
