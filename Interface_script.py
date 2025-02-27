@@ -4,12 +4,37 @@ Author: Andrew Gaylord
 
 Maya Python script that simulates earth horizon sensor images taken from a satellite in Low Earth Orbit (LEO)
 
-Uses IrishSat's Python Simulated Orbital Library (PySOL) to find orbit
-    https://github.com/ND-IrishSat/PySOL
-    Must clone to documents/maya/scripts
-    The generate_orbit_data function can be imported from there
+Usage:
 
-Rendered images are created in selected project folder -> images
+1. Clone IrishSat's Python Simulated Orbital Library (PySOL) and this repo to the scripts folder in Maya.
+    Mine looks like this: C:\Users\agaylord\Documents\maya\scripts\Horizon_Sensor_Sim and C:\Users\agaylord\Documents\maya\scripts\PySOL
+        git clone https://github.com/ND-IrishSat/PySOL
+        git clone https://github.com/AGaylord6/Horizon_Sensor_Sim.git
+    The generate_orbit_data function (PySOL) and everything else but interface_script can be imported from there
+
+2. Copy the IrishSat_Simulator folder (this is your project folder) to wherever you want on the machine, like desktop or documents
+    Mine is located at C:\Users\agaylord\Desktop\IrishSat_Simulator
+
+3. Copy interface_script.py to the scripts folder within the project folder
+    Mine is located at C:\Users\agaylord\Desktop\IrishSat_Simulator\scripts\interface_script.py
+
+4. Open Maya and open the IrishSat project
+    File -> Project Window 
+
+5. Open the earth_scene.mb file from the scenes folder
+
+6. Open the script window (look for the semicolon in the bottom right corner) and open the interface_script.py file
+
+7. Import all required libraries to python maya by navigating to C:\Program Files\Autodesk\Maya2025\bin in the command prompt
+    Run .\mayapy -m pip install library_name in that directory for each library error that pops up when you try to run the script
+
+8. Run the script by clicking the play button in the script window
+
+Edit params.py and nadir_point.py in C:\Users\agaylord\Documents\maya\scripts\Horizon_Sensor_Sim to change simulation parameters/control laws
+    Make sure you hit play several times (before hitting confirm) to reload the libraries and make sure they are updated
+
+Rendered images are created in project folder -> images
+    For example, C:\Users\agaylord\Desktop\IrishSat_Simulator\images
 '''
 
 import maya.cmds as mc
