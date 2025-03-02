@@ -423,6 +423,9 @@ def main(oe):
         return
     # convert to km
     gps = gps * .001
+    if STANDSTILL:
+        firstPoint = gps[0]
+        gps = np.array([firstPoint for x in gps])
     # initialize current state
     current_state = np.zeros((STATE_SPACE_DIMENSION))
     second_cam = None
