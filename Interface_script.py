@@ -8,33 +8,40 @@ Usage:
 
 1. Clone IrishSat's Python Simulated Orbital Library (PySOL) and this repo to the scripts folder in Maya.
     Mine looks like this: C:\Users\agaylord\Documents\maya\scripts\Horizon_Sensor_Sim and C:\Users\agaylord\Documents\maya\scripts\PySOL
-        git clone https://github.com/ND-IrishSat/PySOL
+        git clone https://github.com/ND-IrishSat/PySOL.git
         git clone https://github.com/AGaylord6/Horizon_Sensor_Sim.git
     The generate_orbit_data function (PySOL) and everything else but interface_script can be imported from there
 
-2. Copy the IrishSat_Simulator folder (this is your project folder) to wherever you want on the machine, like desktop or documents
+2. Copy the IrishSat_Simulator folder (in the Maya_project folder) to wherever you want on the machine, like desktop or documents (this is your project folder)
     Mine is located at C:\Users\agaylord\Desktop\IrishSat_Simulator
 
 3. Copy interface_script.py to the scripts folder within the project folder
     Mine is located at C:\Users\agaylord\Desktop\IrishSat_Simulator\scripts\interface_script.py
 
-4. Open Maya and open the IrishSat project
+4. Open Maya and open the IrishSat project (set project)
     File -> Project Window 
 
 5. Open the earth_scene.mb file from the scenes folder
 
 6. Open the script window (look for the semicolon in the bottom right corner) and open the interface_script.py file
 
-7. Import all required libraries to python maya by navigating to C:\Program Files\Autodesk\Maya2025\bin in the command prompt
+7. Open VScode and open the \Documents\maya\scripts\Horizon_Sensor_Sim folder
+    Turn on autosave
+    Install pdf extension (will pop up when you try to open pdf)
+
+8. Import all required libraries to python maya by navigating to C:\Program Files\Autodesk\Maya2025\bin in the command prompt/vscode terminal
     Run .\mayapy -m pip install library_name in that directory for each library error that pops up when you try to run the script
+    For the cv2 error, restart maya after running .\mayapy -m pip install opencv-python
+    For openGL error, run .\mayapy -m pip install PyOpenGL
 
-8. Run the script by clicking the play button in the script window
+9. Run the script by clicking the play button in the script window
 
-Edit params.py and nadir_point.py in C:\Users\agaylord\Documents\maya\scripts\Horizon_Sensor_Sim to change simulation parameters/control laws
+Edit params.py and nadir_point.py in VSCode to change simulation parameters/control laws
     Make sure you hit play several times (before hitting confirm) to reload the libraries and make sure they are updated
 
 Rendered images are created in project folder -> images
     For example, C:\Users\agaylord\Desktop\IrishSat_Simulator\images
+
 '''
 
 import maya.cmds as mc
@@ -88,8 +95,7 @@ importlib.reload(Horizon_Sensor_Sim.Simulator.magnetorquer)
 importlib.reload(Horizon_Sensor_Sim.Simulator.sat_model)
 importlib.reload(Horizon_Sensor_Sim.Simulator.simulator)
 
-# import PySOL in specific order
-# must pip install astropy, scipy, h5py, matplotlib, geopandas, geodatasets
+# import PySOL in specific orderopenGL: PyOpenGL 
 import PySOL.wmm as wmm
 import PySOL.sol_sim
 import PySOL.spacecraft as sp
