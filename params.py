@@ -15,7 +15,7 @@ DEGREES = False
 QUAT_INITIAL = np.array([1.0, 1.0, 0.0, 0.0])
 # we want to start with 15 degrees/s in each axis
 # VELOCITY_INITIAL = np.array([15.0,-10.0,10.0])
-VELOCITY_INITIAL = np.array([0.0, 0.0, 0.0])
+VELOCITY_INITIAL = np.array([0.25, -.25, 0.0])
 # convert to rad/s
 if not DEGREES:
     VELOCITY_INITIAL *= math.pi / 180
@@ -57,7 +57,7 @@ TF = int(HOURS * 3600)
 # time step (how long between each iteration)
 DT = .5
 # threshold for when we consider our satellite detumbled (degrees/s)
-DETUMBLE_THRESHOLD = 0.5
+DETUMBLE_THRESHOLD = 0.1
 # convert to rad/s
 if not DEGREES:
     DETUMBLE_THRESHOLD *= math.pi / 180
@@ -75,6 +75,7 @@ CSV_FILE = "1_orbit_half_second" # .5 dt
 CONSTANT_B_FIELD = False
 RW_OFF = True
 SENSOR_NOISE = True
+STANDSTILL = True # keep satellite in same position around the earth
 # 0 = only create pdf output, 1 = show 3D animation visualization, 2 = both, 3 = none
 RESULT = 0
 OUTPUT_DIR = "plotOutput"
@@ -145,8 +146,8 @@ CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
 # bang-bang controller gains
 # KP = .01 # for bang-bang
 # KD = .009
-KP = 1.5e2 # for normal conversion
-KD = 1.3e2
+KP = 2.2e2 # for normal conversion
+KD = 2.3e2
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B
