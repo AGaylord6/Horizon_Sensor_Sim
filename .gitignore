@@ -1,3 +1,6 @@
 *.pyc
 Simulator/plotOutput/*
 Simulator/output.pdf
+Maya_project/Irishsat_Simulator/images/*
+Maya_project/Irishsat_Simulator/cache/
+Maya_project/Irishsat_Simulator/autosave/

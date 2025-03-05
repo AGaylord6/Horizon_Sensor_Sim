@@ -50,7 +50,7 @@ CONSTANT_B_FIELD_MAG = np.array([19.42900375, 1.74830615, 49.13746833])
 # total time to run sim (unrounded hours)
 # HOURS = ORBITAL_PERIOD / 3600
 # HOURS = 0.2
-HOURS = 600 / 3600
+HOURS = 100 / 3600
 print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
 TF = int(HOURS * 3600)

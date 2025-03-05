@@ -6,18 +6,17 @@ Maya Python script that simulates earth horizon sensor images taken from a satel
 
 Usage:
 
+1. Open Maya
+
 1. Clone IrishSat's Python Simulated Orbital Library (PySOL) and this repo to the scripts folder in Maya.
     Mine looks like this: C:\Users\agaylord\Documents\maya\scripts\Horizon_Sensor_Sim and C:\Users\agaylord\Documents\maya\scripts\PySOL
         git clone https://github.com/ND-IrishSat/PySOL.git
         git clone https://github.com/AGaylord6/Horizon_Sensor_Sim.git
-    The generate_orbit_data function (PySOL) and everything else but interface_script can be imported from there
+    The generate_orbit_data function (PySOL) and everything else can be imported from there
 
-2. Copy the IrishSat_Simulator folder (in the Maya_project folder) to wherever you want on the machine, like desktop or documents (this is your project folder)
-    Mine is located at C:\Users\agaylord\Desktop\IrishSat_Simulator
-
-3. Copy interface_script.py to the scripts folder within the project folder
-    Mine is located at C:\Users\agaylord\Desktop\IrishSat_Simulator\scripts\interface_script.py
-
+2. The IrishSat_Simulator folder (in the Maya_project folder) is your project folder
+    C:\Users\agaylord\Documents\maya\scripts\Horizon_Sensor_Sim\Maya_project\IrishSat_Simulator
+    
 4. Open Maya and open the IrishSat project (set project)
     File -> Project Window 
 
