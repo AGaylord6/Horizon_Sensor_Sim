@@ -1,6 +1,6 @@
 '''
 image_processing.py
-Authors: Andrew, Brian, Kris, Rawan, Daniel, Chau
+Authors: Andrew, Brian, Kris, Rawan, Daniel, Chau, Andres, Abe, Sophie
 
 Image processing script for finding horizon edges, regression line, pitch and roll of satellite
 Input: sample satellite Earth Horizon Sensor (EHS) images
@@ -32,7 +32,9 @@ FOCAL_LENGTH = 5.8 # mm
 # resolution of image in degrees per pixel
 PIXEL_HEIGHT = FOV / IMAGE_HEIGHT
 
-def processImage(image=None, degree=1):
+showTwoImages = False
+
+def processImage(image=None, degree=1, img_name = None):
     '''
     Given a Earth Horizon Sensor (EHS) image, find the line that best fits the horizon
     and return the pitch, roll, and alpha of the satellite
@@ -40,10 +42,12 @@ def processImage(image=None, degree=1):
     @params:
         image (24x32 pixels): numpy array of EHS pixels
         degree (optional): degree of polynomial to fit
+        img_name (file name, optional): name of image file to load
     @returns:
         roll (float): rotation about x axis. How tilted each line is. 0 = flat horizon. (degrees)
         pitch (float): angle of pointing up and down based on center of image. 0 = horizon is centered. (degrees)
-        alpha (float): the percentage (as a decimal) of the image filled by the Earth
+        yaw (float): angle of side to side rotation, based on line midpoint and image center
+        alpha: the percentage of the image filled by the Earth (float %)
         edges (1x4 array): top, right, bottom, left edges respectively. All values between [0-1] representing how much earth is on that edge
     '''
 
@@ -53,7 +57,11 @@ def processImage(image=None, degree=1):
         image_directory = "images"
         # image_name = "ehs_ir_tilted_4_cam2.png" # infrared photo
         # image_name = "ehs_ir_tilted_20.png" # infrared photo tilted
-        image_name = "ehs21_IR_second_1.png" # first cam photo
+        if (img_name == None):
+            image_name = "ehs17_IR_second_1.png"
+            # image_name = "ehs_ir_tilted_15.png"
+        else:
+            image_name = img_name # first cam photo
         # image_name = "ehs_ir_earth.png" # infrared photo of only earth
     
         # Get the absolute path to the script's directory
@@ -61,13 +69,13 @@ def processImage(image=None, degree=1):
         # Construct the absolute path to the image
         image_path = os.path.join(script_dir, image_directory, image_name)
     
-        # read our image and convert to to grayscale
+        # read our image and convert to grayscale
         img = cv2.imread(image_path)
 
         print(f'{image_path} loaded by OpenCV successfully!')
     else:
         img = image
-        
+
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # simulate our sensor output better by unfocusing and adding noise to our image
     smoothed_img = cv2.GaussianBlur(gray_img, (3, 3), 0)
@@ -103,8 +111,6 @@ def processImage(image=None, degree=1):
 
     # Apply Sobel edge detector: find intensity gradient for each pixel
     #     Look for large changes in pixel intensity in x and y direction
-    # sobelx = cv2.Sobel(src=gray_img, ddepth=cv2.CV_64F, dx=1, dy=0, ksize=5) # Sobel on the X axis (essentially the X partial derivative)
-    # sobely = cv2.Sobel(src=gray_img, ddepth=cv2.CV_64F, dx=0, dy=1, ksize=5) 
     # Combined X and Y Sobel Edge Detection (fxy partial derivative)
     # TODO: try different values, smoothed_img. Maybe print through cv2.imshow()?
     sobelxy = cv2.Sobel(src=smoothed_img, ddepth=cv2.CV_64F, dx=1, dy=1, ksize=5)
@@ -120,7 +126,7 @@ def processImage(image=None, degree=1):
     canny_edges2 = cv2.Canny(contrasted_img, threshold1=50, threshold2=150)
 
     # TODO: impliment custom edge detection method (column based)
-    custom_edges = np.array(smoothed_img)
+    # custom_edges = np.array(smoothed_img)
     # transcribe the image to an array
     # for row in custom_edges:
         # lowThreshold = 0
@@ -138,8 +144,6 @@ def processImage(image=None, degree=1):
             # of pixel may be higher than the threshold value or
             # may be less than the threshold value
 
-    # TODO: mask edge pixels around the point closest to the center of the image??
-
     # extract a list of edge pixels from canny method
     edge_pixels = np.where(canny_edges != 0)
     edge_coordinates = np.array(list(zip(edge_pixels[1], edge_pixels[0])))
@@ -149,57 +153,78 @@ def processImage(image=None, degree=1):
     if len(edge_coordinates) == 0:
         # print("No edge pixels found!")
         if (np.sum(np.array(smoothed_img)) / (IMAGE_WIDTH * IMAGE_HEIGHT)) > 20:
-            # TODO: better way to calculate this?
+            # TODO: better way to calculate this constant?
             # if no edge is found but we're looking at earth, return alpha = 1
             return -1, -1, 1.0, [-1, -1, -1, -1]
         else:
             # if we only see space, return alpha = 0
             return -1, -1, 0.0, [-1, -1, -1, -1]
 
+    # extract x and y coordinates of edge pixels
     x = edge_coordinates[:, 0]
     y = edge_coordinates[:, 1]
+    # store the original
+    x_uncut = edge_coordinates[:, 0]
+    y_uncut = edge_coordinates[:, 1]
+
+    # sort the edge pixels by x and y coordinates (while keeping their pairing)
+    sorted_x = np.argsort(edge_coordinates[:, 0])
+    sorted_edge_coordinates_x = edge_coordinates[sorted_x]
+    x_sorted_x = sorted_edge_coordinates_x[:, 0]
+    y_sorted_x = sorted_edge_coordinates_x[:, 1]
+
+    sorted_y = np.argsort(edge_coordinates[:, 1])
+    sorted_edge_coordinates_y = edge_coordinates[sorted_y]
+    x_sorted_y = sorted_edge_coordinates_y[:, 0]
+    y_sorted_y = sorted_edge_coordinates_y[:, 1]
+
+    # define how large of a gap we allow between edge pixels before discarding one half
+    max_pixel_gap = 4
+    # check for split edge pieces (if two edges are detected)
+    for i in range(1, len(x)) :
+        # for each edge pixel, check if the gap between it and the previous pixel is too large
+        if (abs((x_sorted_x[i] - x_sorted_x[i-1])) > max_pixel_gap):
+            # print ("X Split detected")
+            # take the larger horizon piece found
+            x = x_sorted_x[i:] if i < len(x) / 2.0 else x_sorted_x[:i]
+            y = y_sorted_x[i:] if i < len(y) / 2.0 else y_sorted_x[:i]
+            break
+        elif (abs((y_sorted_y[i] - y_sorted_y[i-1])) > max_pixel_gap):
+            # check for gaps along y direction as well
+            # print ("Y Split detected")
+            # take the larger horizon piece found
+            x = x_sorted_y[i:] if i < len(x) / 2.0 else x_sorted_y[:i]
+            y = y_sorted_y[i:] if i < len(y) / 2.0 else y_sorted_y[:i]
+            break
 
     # find the average brightness of horizon pixels to use as threshold to differentiate between space and earth
     #   this will allow us another method to recognize horizon vs space pixels
-    total_edge_brightness = 0.0
-    for i in range(len(y)):
-        total_edge_brightness += smoothed_img[y[i]][x[i]] # WARNING: watch out for 8bit int overflow
-
+    # WARNING: watch out for 8bit int overflow
+    total_edge_brightness = sum([ smoothed_img[y[i]][x[i]] for i in range(len(y)) ])
     average_brightness = total_edge_brightness / float(len(y))
-    threshold_brightness = average_brightness # add offset here if neccessary
+    threshold_brightness = average_brightness   # ADD offset here if neccessary
     # print("Average intensity of edge pixels: ", average_brightness)
 
     #Finds the brightness of each edge, to be used to find the orientation of the sattelite such that earth is on the bottom half of the photo
-    #top edge
-    total_top_brightness = 0
-    for column in range(len(smoothed_img[0])):
-        total_top_brightness += float(smoothed_img[0][column])
-    top_average_brightness = total_top_brightness/IMAGE_WIDTH
+    top_brightness = [ float(smoothed_img[0][column]) for column in range(len(smoothed_img[0])) ]
+    top_average_brightness = sum(top_brightness) / IMAGE_WIDTH
     # print("Top edge brightness is ", top_average_brightness)
 
-    #bottom edge
-    total_bottom_brightness = 0
-    for column in range(len(smoothed_img[IMAGE_HEIGHT-1])):
-        total_bottom_brightness += float(smoothed_img[IMAGE_HEIGHT-1][column])
-    bottom_average_brightness = total_bottom_brightness/IMAGE_WIDTH
+    bottom_brightness = [ float(smoothed_img[IMAGE_HEIGHT-1][column]) for column in range(len(smoothed_img[IMAGE_HEIGHT-1])) ]
+    bottom_average_brightness = sum(bottom_brightness)/IMAGE_WIDTH
     # print("Bottom edge brightness is ", bottom_average_brightness)
 
-    #left edge
-    total_left_brightness = 0
-    for row in range(len(smoothed_img)):
-        total_left_brightness += float(smoothed_img[row][0])
-    left_average_brightness = total_left_brightness/IMAGE_HEIGHT
+    left_brightness = [ float(smoothed_img[row][0]) for row in range(len(smoothed_img))]
+    left_average_brightness = sum(left_brightness)/IMAGE_HEIGHT
     # print("Left edge brightness is ", left_average_brightness)
 
-    #right edge
-    total_right_brightness = 0
-    for row in range(len(smoothed_img)):
-        total_right_brightness += float(smoothed_img[row][IMAGE_WIDTH-1])
-    right_average_brightness = total_right_brightness/IMAGE_HEIGHT
+    right_brightness = [ float(smoothed_img[row][IMAGE_WIDTH-1]) for row in range(len(smoothed_img))]
+    right_average_brightness = sum(right_brightness)/IMAGE_HEIGHT
     # print("Right edge brightness is ", right_average_brightness)
 
     edges = [top_average_brightness, right_average_brightness, bottom_average_brightness, left_average_brightness]
     edges = edges / np.linalg.norm(edges)
+    # print("Normalized edge intensities: ", edges)
 
     # find the percentage of the image that is the Earth (alpha)
     alpha = 0
@@ -268,4 +293,13 @@ def processImage(image=None, degree=1):
 
 
 if __name__ == "__main__":
-    processImage()
+
+    if showTwoImages:
+        # displays both angles of the image on two separate windows
+        image_path1 = "ehs73_IR_first_1.png"
+        image_path2 = "ehs73_IR_second_1.png"
+        processImage(None, 1, image_path1)
+        processImage(None, 1, image_path2)
+        plt.show()
+    else:
+        processImage()

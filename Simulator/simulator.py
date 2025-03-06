@@ -299,7 +299,7 @@ class Simulator():
 
         elif self.mag_sat.state == "search":
             # if both see earth in some capacity (even if one if full), move to pointing
-            if self.mag_sat.cam1.alpha >= 0.0 and self.mag_sat.cam2.alpha >= 0.0:
+            if self.mag_sat.cam1.alpha >= 0.05 and self.mag_sat.cam2.alpha >= 0.05:
                 # print("SWITCH TO POINT")
                 return "point"
             else:
