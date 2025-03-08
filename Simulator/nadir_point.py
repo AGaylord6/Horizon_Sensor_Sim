@@ -48,9 +48,6 @@ def nadir_point(mag_sat):
 
     # NOTE: cams can be facing different directions because the FOV's overlap
 
-    # if upside down, rotate hard through Y (or trigged axis of fullest edge -- or roll!) of one pointing more towards earth (to rotate through it)?
-    #   or just base on one that has earth in bottom of horizon
-
     # do we need to account for yaw sometime? Is that why one axis is always spinning?
     # if roll/pitch flips (cam rotates too much), pd will suddenly try to go other way towards 0 (undoing momentum in had previously?)
     #   want to ensure we're never relying on cam that is rotating too much?
@@ -62,6 +59,10 @@ def nadir_point(mag_sat):
     #       seems that -x velocity is downwards with respect to cam2
 
     # +x and -z voltages are trying to move cam1 up and cam2 down (yayyy)
+
+    # things to test:
+    #   keep searching if one cam sees space (utilize upside down one by bang-banging?)
+    #   different averages between voltages
     
     # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)
@@ -93,14 +94,18 @@ def nadir_point(mag_sat):
 
     # weight 1 = cam1 trusted, weight 0 = cam2 trusted
     weight = 0.5
+    # if we see more than this amount of earth, don't trust that cam
+    ALPHA_CUTOFF = .8
+
+    # EASE into going back to average?
 
     # edges are top, right, bottom, left intensities (0-1)
-    if (mag_sat.cam1.edges[0] > mag_sat.cam1.edges[2] and mag_sat.cam2.edges[0] < mag_sat.cam2.edges[2]) or (mag_sat.cam1.alpha >= 0.95):
-        # if first cam is upside down (bottom less than top) and second is not, or first cam is seeing all earth
+    if (mag_sat.cam1.edges[0] > mag_sat.cam1.edges[2] and mag_sat.cam2.edges[0] < mag_sat.cam2.edges[2]) or (mag_sat.cam1.alpha >= ALPHA_CUTOFF):
+        # if first cam is upside down (bottom less than top) and second is not, or first cam is seeing a large amount of earth
         # then trust cam2
         weight = 0
-    elif (mag_sat.cam2.edges[0] > mag_sat.cam2.edges[2] and mag_sat.cam1.edges[0] < mag_sat.cam1.edges[2]) or (mag_sat.cam2.alpha >= 0.95):
-        # if second cam is upside down (bottom less than top) and first is not, or second cam is seeing all earth
+    elif (mag_sat.cam2.edges[0] > mag_sat.cam2.edges[2] and mag_sat.cam1.edges[0] < mag_sat.cam1.edges[2]) or (mag_sat.cam2.alpha >= ALPHA_CUTOFF):
+        # if second cam is upside down (bottom less than top) and first is not, or second cam is seeing a large amount of earth
         # then trust cam1
         weight = 1
     # elif (mag_sat.cam2.alpha < mag_sat.cam1.alpha):
