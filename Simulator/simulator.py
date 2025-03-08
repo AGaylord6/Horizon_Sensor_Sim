@@ -23,7 +23,6 @@ import sys
 # import params module from parent directory
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from Horizon_Sensor_Sim.params import *
-from Horizon_Sensor_Sim.Simulator.propagate import *
 from Horizon_Sensor_Sim.Simulator.sat_model import Magnetorquer_Sat
 from Horizon_Sensor_Sim.Simulator.all_EOMs import *
 from Horizon_Sensor_Sim.Simulator.image_processing import *
@@ -341,46 +340,6 @@ class Simulator():
             else:
                 self.voltages[i] = self.voltages[i - 1]
                 self.mode[i] = self.mode[i - 1]
-
-
-    def run_b_dot_sim(self):
-        '''
-        Simulates the B_dot detumbling algorithm
-        '''
-        i = 1
-
-        while i < self.n:
-            ideal = self.find_ideal(i)
-
-            # generate fake sensor data in body frame based on last state
-            self.generateData_step(ideal, i)
-
-            self.propagate_step(i)
-
-            # calculate total power usage for this time step (Watts)
-            self.totalPower[i] = self.power_output[i][0] + self.power_output[i][1] + self.power_output[i][2]
-
-            # threshold 0.5-1 degress per second per axis
-            thresholdLow = 0
-            thresholdHigh = DETUMBLE_THRESHOLD
-
-            angularX = abs(self.states[i][4])
-            angularY = abs(self.states[i][5])
-            angularZ = abs(self.states[i][6])
-
-            if(self.finishedTime == -1):
-                if (thresholdLow <= angularX <= thresholdHigh) and (thresholdLow <= angularY <= thresholdHigh) and (thresholdLow <= angularZ <= thresholdHigh):
-                    # record first time we hit "detumbled" threshold (seconds)
-                    self.finishedTime = i*DT
-                    
-                    # When the "detumbled" threshold is hit, calculate total Energy
-                    # Total Energy is calculated as a "Rieman Sum" of the total power used at each time step multiplied by the time step
-                    for step in range(i):
-                        self.energy = self.energy + self.totalPower[step]*self.dt
-                    
-            i += 1
-        
-        self.plot_and_viz_results()
 
 
     def plotData(self):

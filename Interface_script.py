@@ -71,8 +71,6 @@ importlib.reload(Horizon_Sensor_Sim.params)
 # importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
 import Horizon_Sensor_Sim.Simulator.B_dot
 importlib.reload(Horizon_Sensor_Sim.Simulator.B_dot)
-import Horizon_Sensor_Sim.Simulator.propagate
-importlib.reload(Horizon_Sensor_Sim.Simulator.propagate)
 # importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
 import Horizon_Sensor_Sim.Simulator.graphing
 importlib.reload(Horizon_Sensor_Sim.Simulator.graphing)
