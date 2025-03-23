@@ -40,11 +40,15 @@ class Magnetorquer_Sat():
 
         self.mags = magnetorquers
 
-        # array of max torques for each magnetorquer (used to check boundaries)
-        self.max_torque = np.array([
-            AIR_MAX_TORQUE if mag.epsilon == 1 else FERRO_MAX_TORQUE
-            for mag in self.mags
-        ])
+        # # array of max torques for each magnetorquer (used to check boundaries)
+        # self.max_torque = np.array([
+        #     AIR_MAX_TORQUE if mag.epsilon == 1 else FERRO_MAX_TORQUE
+        #     for mag in self.mags
+        # ])
+
+        # array of resistances and inductances for each magnetorquer
+        self.resistances = np.array([mag.resistance for mag in self.mags])
+        self.inductances = np.array([mag.inductance for mag in self.mags])
 
         # dt and prev B field for calculations with no gyroscope
         self.dt = DT

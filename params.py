@@ -151,41 +151,49 @@ KD = 2.5e2
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B
+    K = 4e-5 # for accurate mag readings
     # proposed value for k for b-cross algorithm
     # K = 2 * ((ORBITAL_ELEMENTS[1] * 1000 ) ** 3 / (GRAVITY_EARTH))**(-0.5) * (1 + math.sin(INCLINATION_RAD)) * min(CUBESAT_eigenvalues)
 else:
-    K = -25600 * 1.1 # proportional gain for B_dot algorithm without gyroscope, still have to define this value
-# Avanzini and Giulietti (https://arc.aiaa.org/doi/10.2514/1.53074): 
-#     k =2n(1+sinζ)Imin "this is bdot"-andrew
-#     k = 2 * 1/(rad(a^3/GM))(1+sinζ)λmin  "This is bcross" - also andrew
-#     
-#     GM - grav constant
-#     a - orbit semi-major axis
-#     lambda - J minimum eigenvalue
-#     n is mean motion of satellite, ζ is the inclination of the orbit with respect to
-#     the geomagnetic equator, and Imin is the value of minimum moment of inertia of the satellite.
-# find minimum element of CUBE_BODY_INERTIA
-# I_min = np.min(np.diagonal(CUBESAT_BODY_INERTIA))
-# average angular velocity over one orbit
-# MEAN_MOTION = 2 * np.pi / ORBITAL_PERIOD
-# K = 2 * MEAN_MOTION * (1 + math.sin(INCLINATION_RAD)) * I_min
-# orbital angular rate (rad/s): how fast it orbits earth
-# ORBIT_RATE = math.sqrt(GRAVITY_EARTH / (ORBITAL_ELEMENTS[1] * 1000)**3)
-# K = 2 * ORBIT_RATE * (1 + math.sin(INCLINATION_RAD)) * I_min 
+    # K = .25e5 # proportional gain for B_dot without gyro
+    K = 1.5e3 # .275e4 is best
+    # for constant b-field, .2-.14e4 works
+    #   it steadily decreases until 1 reaches a point it starts steadily increasing/decreasing
+    # Avanzini and Giulietti (https://arc.aiaa.org/doi/10.2514/1.53074): 
+    #     k =2n(1+sinζ)Imin "this is bdot"-andrew
+    #     GM - grav constant, a - orbit semi-major axis, lambda - J minimum eigenvalue, n is mean motion of satellite,
+    #     ζ is the inclination of the orbit with respect to the geomagnetic equator, and Imin is the value of minimum moment of inertia.
+    # find minimum element of CUBE_BODY_INERTIA
+    # I_min = np.min(np.diagonal(CUBESAT_BODY_INERTIA))
+    # average angular velocity over one orbit
+    # MEAN_MOTION = 2 * np.pi / ORBITAL_PERIOD
+    # K = 2 * MEAN_MOTION * (1 + math.sin(INCLINATION_RAD)) * I_min
+    # orbital angular rate (rad/s): how fast it orbits earth
+    # ORBIT_RATE = math.sqrt(GRAVITY_EARTH / (ORBITAL_ELEMENTS[1] * 1000)**3)
+    # K = 2 * ORBIT_RATE * (1 + math.sin(INCLINATION_RAD)) * I_min 
 print("gain: ", K)
 
 # Max torque for both Torquers
 MAX_VOLTAGE = 5  # Maximum voltage [V]
 # we have ~1 amp total between all torques
-MAX_CURRENT = 1 / 3  # Maximum current [A]
+# MAX_CURRENT = 1 / 3  # Maximum current [A]
+MAX_CURRENT = 0.4  # Maximum current [A]
 RESISTANCE_MAG = 12 # Resistance [Ohm]
 INDUCTANCE_MAG = 146 # Inductance [H]
 
 #===============  AIRCORE TORQUER  =====================================================
 
 # Magnetorquer geometry (rectangular air core)
-AIR_NUM_TURNS = 654  # total number of turns of coil
+# AIR_NUM_TURNS = 654  # total number of turns of coil
+AIR_NUM_TURNS = 384  # green expiremental green air toruqer (from robby)
 AIR_AREA = 0.008 # Area of magnetorquer [m^2]
+
+# expiremental values
+# want 60 mA current at max voltage
+# resistance controls the max current
+AIR_RESISTANCE_MAG = 80 # (Ohms)
+# THIS CONTROLS RATE OF CHANGE OF CURRENT (lower = lower time constant/charging speed)
+AIR_INDUCTANCE_MAG = 10 # Inductance [H]
 
 AIR_MAX_TORQUE = 4.997917534360683e-05 # N·m
 # Total Resistance: 15.692810457516336 Ohms
@@ -199,8 +207,16 @@ AIR_MAX_TORQUE = 4.997917534360683e-05 # N·m
 RELATIVE_PERM_MM = 80000  # Relative permeability of MuMetal (between 80,000 and 100,000)
 FERRO_LENGTH = 7 # length of the rod [cm]
 FERRO_ROD_RADIUS = 0.32 # Core rod radius [cm]
-FERRO_NUM_TURNS = 1845 # number of turns of coil
+# FERRO_NUM_TURNS = 1845 # number of turns of coil
+FERRO_NUM_TURNS = 2200 # expiremntal ferro torquer (from robby)
 FERRO_AREA = np.pi * (FERRO_ROD_RADIUS / 100)**2 # Area of magnetorquer [m^2]
+
+# expiremental values
+# want 225 mA current at max voltage
+# resistance controls the max current
+FERRO_RESISTANCE_MAG = 20 # (Ohms)
+# THIS CONTROLS RATE OF CHANGE OF CURRENT (lower = lower time constant/charging speed)
+FERRO_INDUCTANCE_MAG = 3 # Inductance [H]
 
 # taken from Sarah's optimizing code (with 80000 permeability)
 FERRO_MAX_TORQUE = 3.185e-5 # n*m
