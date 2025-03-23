@@ -15,8 +15,7 @@ DEGREES = False
 QUAT_INITIAL = np.array([1.0, 1.0, 0.0, 0.0])
 # we want to start with 15 degrees/s in each axis
 # VELOCITY_INITIAL = np.array([15.0,-10.0,10.0])
-# VELOCITY_INITIAL = np.array([0.15, -.15, 0.0])
-VELOCITY_INITIAL = np.array([0.0, 0.0, 0.0])
+VELOCITY_INITIAL = np.array([0.15, 0.0, 0.0])
 # convert to rad/s
 if not DEGREES:
     VELOCITY_INITIAL *= math.pi / 180
@@ -50,7 +49,6 @@ CONSTANT_B_FIELD_MAG = np.array([19.42900375, 1.74830615, 49.13746833])
 
 # total time to run sim (unrounded hours)
 # HOURS = ORBITAL_PERIOD / 3600
-# HOURS = 0.2
 HOURS = 10 / 3600
 print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
@@ -147,8 +145,8 @@ CUBESAT_eigenvalues, CUBESAT_eigenvectors = np.linalg.eig(CUBESAT_BODY_INERTIA)
 # bang-bang controller gains
 # KP = .01 # for bang-bang
 # KD = .009
-KP = 2.5e-5 # for normal conversion
-KD = 2.5e-5
+KP = 3e4 # for normal conversion
+KD = 5e4
 
 if GYRO_WORKING:
     K = 1e-5 # old EOMS, constant B
@@ -194,7 +192,7 @@ AIR_AREA = 0.008 # Area of magnetorquer [m^2]
 # resistance controls the max current
 AIR_RESISTANCE_MAG = 80 # (Ohms)
 # THIS CONTROLS RATE OF CHANGE OF CURRENT (lower = lower time constant/charging speed)
-AIR_INDUCTANCE_MAG = 20 # Inductance [H]
+AIR_INDUCTANCE_MAG = 23 # Inductance [H]
 
 AIR_MAX_TORQUE = 4.997917534360683e-05 # N·m
 # Total Resistance: 15.692810457516336 Ohms
@@ -217,7 +215,7 @@ FERRO_AREA = np.pi * (FERRO_ROD_RADIUS / 100)**2 # Area of magnetorquer [m^2]
 # resistance controls the max current
 FERRO_RESISTANCE_MAG = 20 # (Ohms)
 # THIS CONTROLS RATE OF CHANGE OF CURRENT (lower = lower time constant/charging speed)
-FERRO_INDUCTANCE_MAG = 7 # Inductance [H]
+FERRO_INDUCTANCE_MAG = 5 # Inductance [H]
 
 # taken from Sarah's optimizing code (with 80000 permeability)
 FERRO_MAX_TORQUE = 3.185e-5 # n*m

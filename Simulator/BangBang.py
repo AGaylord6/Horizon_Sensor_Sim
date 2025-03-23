@@ -38,6 +38,7 @@ def BangBang (current, target, mag_sat):
     torque = - mag_sat.kp * error_quat[1:4] - mag_sat.kd * mag_sat.w_sat
 
     # Define the magnetic moment by taking a cross product of the magnetic field with the previously defined torque
+    # TODO: only works if they're all orthogonal??
     m = np.cross( mag_sat.B_body, torque )
 
     # normalize the magnetic moment so that we're just getting a direction without magnitude

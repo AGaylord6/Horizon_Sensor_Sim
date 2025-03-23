@@ -200,46 +200,41 @@ def processImage(image=None, degree=1, img_name = None):
     # find the average brightness of horizon pixels to use as threshold to differentiate between space and earth
     #   this will allow us another method to recognize horizon vs space pixels
     # WARNING: watch out for 8bit int overflow
-    total_edge_brightness = sum([ smoothed_img[y[i]][x[i]] for i in range(len(y)) ])
+    total_edge_brightness = sum([ float(smoothed_img[y[i]][x[i]]) for i in range(len(y)) ])
+
     average_brightness = total_edge_brightness / float(len(y))
+
     threshold_brightness = average_brightness   # ADD offset here if neccessary
-    # print("Average intensity of edge pixels: ", average_brightness)
-
-    #Finds the brightness of each edge, to be used to find the orientation of the sattelite such that earth is on the bottom half of the photo
-    top_brightness = [ float(smoothed_img[0][column]) for column in range(len(smoothed_img[0])) ]
-    top_average_brightness = sum(top_brightness) / IMAGE_WIDTH
-    # print("Top edge brightness is ", top_average_brightness)
-
-    bottom_brightness = [ float(smoothed_img[IMAGE_HEIGHT-1][column]) for column in range(len(smoothed_img[IMAGE_HEIGHT-1])) ]
-    bottom_average_brightness = sum(bottom_brightness)/IMAGE_WIDTH
-    # print("Bottom edge brightness is ", bottom_average_brightness)
-
-    left_brightness = [ float(smoothed_img[row][0]) for row in range(len(smoothed_img))]
-    left_average_brightness = sum(left_brightness)/IMAGE_HEIGHT
-    # print("Left edge brightness is ", left_average_brightness)
-
-    right_brightness = [ float(smoothed_img[row][IMAGE_WIDTH-1]) for row in range(len(smoothed_img))]
-    right_average_brightness = sum(right_brightness)/IMAGE_HEIGHT
-    # print("Right edge brightness is ", right_average_brightness)
-
-    edges = [top_average_brightness, right_average_brightness, bottom_average_brightness, left_average_brightness]
-    edges = edges / np.linalg.norm(edges)
-    # print("Normalized edge intensities: ", edges)
 
     # find the percentage of the image that is the Earth (alpha)
     alpha = 0
+    edge_alpha = [0,0,0,0] # top, right, bottom, left
     total_pixels = IMAGE_WIDTH * IMAGE_HEIGHT
     # values_above_threshold = []
     num_pixels_above_threshold = 0
+    # print("Threshold: ", threshold_brightness)
+
     for w in range(IMAGE_WIDTH):
         for h in range(IMAGE_HEIGHT):
             # for every pixel, check if it is above the threshold
             if smoothed_img[h][w] > threshold_brightness:
-                # values_above_threshold.append(smoothed_img[h][w])
+                #check if pixel is an edge pixel and add to edge alpha array
+                if w == 0:
+                    edge_alpha[1] += 1
+                if w == IMAGE_WIDTH - 1:
+                    edge_alpha[3] += 1
+                if h == 0:
+                    edge_alpha[0] += 1
+                if h == IMAGE_HEIGHT - 1:
+                    edge_alpha[2] += 1
                 num_pixels_above_threshold += 1
 
     alpha = float(num_pixels_above_threshold) / float(total_pixels)
-    # print("Alpha: ", alpha)
+    
+    edge_alpha[0] /= IMAGE_WIDTH
+    edge_alpha[1] /= IMAGE_HEIGHT
+    edge_alpha[2] /= IMAGE_WIDTH
+    edge_alpha[3] /= IMAGE_HEIGHT
 
     # use numpy polynomial solver to find regression line
     coef = np.polyfit(x, y, degree)
@@ -289,7 +284,7 @@ def processImage(image=None, degree=1, img_name = None):
     pitch_ratio = (y_c - line_midpoint_y) / pic_height
     pitch = pitch_ratio * cam_FOV_vertical
 
-    return roll, pitch, alpha, edges
+    return roll, pitch, alpha, edge_alpha
 
 
 if __name__ == "__main__":

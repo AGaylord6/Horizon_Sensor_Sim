@@ -239,25 +239,18 @@ class Simulator():
         '''
         Takes in our two simulated EHS images and stores the info in mag_sat object
         '''
-
         self.mag_sat.cam1.roll, self.mag_sat.cam1.pitch, self.mag_sat.cam1.alpha, self.mag_sat.cam1.edges = processImage(image1)
-        self.pitches1[i] = self.mag_sat.cam1.pitch
-        self.rolls1[i] = self.mag_sat.cam1.roll
-        self.edges1[i] = self.mag_sat.cam1.edges
-        # because we're simulating every other cam, set same measurements for next time step
-        self.pitches1[i + 1] = self.mag_sat.cam1.pitch
-        self.rolls1[i + 1] = self.mag_sat.cam1.roll
-        self.edges1[i + 1] = self.mag_sat.cam1.edges
-
         self.mag_sat.cam2.roll, self.mag_sat.cam2.pitch, self.mag_sat.cam2.alpha, self.mag_sat.cam2.edges = processImage(image2)
-        self.pitches2[i] = self.mag_sat.cam2.pitch
-        self.rolls2[i] = self.mag_sat.cam2.roll
-        self.edges2[i] = self.mag_sat.cam2.edges
-        # because we're simulating every other cam, set same measurements for next time step
-        self.pitches2[i + 1] = self.mag_sat.cam2.pitch
-        self.rolls2[i + 1] = self.mag_sat.cam2.roll
-        self.edges2[i + 1] = self.mag_sat.cam2.edges
-        # print("alphas: {} {}".format(self.mag_sat.cam1.alpha, self.mag_sat.cam2.alpha))
+        # for loop that controls how many in advance we need to save
+        # ex: if we're simulating every other cam, set same measurements for next time step
+        for a in range(4):
+            self.pitches1[i + a] = self.mag_sat.cam1.pitch
+            self.rolls1[i + a] = self.mag_sat.cam1.roll
+            self.edges1[i + a] = self.mag_sat.cam1.edges
+
+            self.pitches2[i + a] = self.mag_sat.cam2.pitch
+            self.rolls2[i + a] = self.mag_sat.cam2.roll
+            self.edges2[i + a] = self.mag_sat.cam2.edges
 
 
     def check_state(self, i):
@@ -302,8 +295,18 @@ class Simulator():
                 # print("SWITCH TO POINT")
                 return "point"
             else:
+                # return "search"
                 # if we don't see the earth, check that we're below detumble threshold
-                return "detumble"
+                thresholdLow = 0
+                thresholdHigh = DETUMBLE_THRESHOLD # 0.5-1 degress per second per axis
+                angularX = abs(self.states[i - 1][4])
+                angularY = abs(self.states[i - 1][5])
+                angularZ = abs(self.states[i - 1][6])
+                # if we're below threshold, stay in search protocol
+                if (thresholdLow <= angularX <= thresholdHigh) and (thresholdLow <= angularY <= thresholdHigh) and (thresholdLow <= angularZ <= thresholdHigh):
+                    return "search"
+                else:
+                    return "detumble"
 
             # count to see how long we've been waiting for??
         elif self.mag_sat.state == "point":
@@ -332,7 +335,7 @@ class Simulator():
             self.mode[i] = -1
         elif self.mag_sat.state == "point":
             # process images and try to center cams
-            if i % 2 == 0:
+            if i % 4 == 0:
                 # only take an image every other timestep
                 # get voltage output and what mode we're in based on image results
                 self.voltages[i], self.mode[i] = nadir_point(self.mag_sat)
