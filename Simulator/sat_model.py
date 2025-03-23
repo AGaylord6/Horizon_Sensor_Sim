@@ -97,6 +97,6 @@ class Magnetorquer_Sat():
             current[i] = moment[i] / (self.mags[i].n * self.mags[i].area * self.mags[i].epsilon)
 
         # convert current to voltage using Ohm's Law
-        voltage = np.array(current) * RESISTANCE_MAG
+        voltage = np.array(current) * self.resistances
 
         return np.array(voltage)
