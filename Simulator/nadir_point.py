@@ -61,10 +61,13 @@ def nadir_point(mag_sat):
     # +x and -z voltages are trying to move cam1 up and cam2 down (yayyy)
 
     # things to test:
+    #   Start at different position (to test different constant magnetic fields)
+    #   ** Start at nadir and set STANDSTILL = False **
     #   Keep searching if one cam sees space (utilize upside down one by bang-banging?)
     #   Different averages between voltages (easing, more rules for trust)
     #       Trust a cam less as it approaches edge
     #   Try to define 1 quaternion instead of 2
+    #   Change bangbang.py to not take cross product--scale max torque instead?
     
     # create quaternion from first EHS
     roll1 = math.radians(mag_sat.cam1.roll)

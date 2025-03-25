@@ -37,8 +37,21 @@ def BangBang (current, target, mag_sat):
     #   this allows us to anticipate and dampen rapid changes, opposing quick changes and preventing overshooting
     torque = - mag_sat.kp * error_quat[1:4] - mag_sat.kd * mag_sat.w_sat
 
+    # find part of torque that is perpendicular to B
+    # B_norm_sq = np.dot(B, B)
+    # if B_norm_sq == 0:
+    #     raise ValueError("Magnetic field vector cannot be zero.")
+    
+    # # Project desired torque onto the plane perpendicular to B
+    # T_d_perp = T_d - (np.dot(T_d, B) / B_norm_sq) * B
+    
+    # # Compute the required magnetic moment
+    # m = np.cross(B, T_d_perp) / B_norm_sq
+
     # Define the magnetic moment by taking a cross product of the magnetic field with the previously defined torque
     # TODO: only works if they're all orthogonal??
+    # by doing this, our actual torque will not be aligned with desired torque if they're not orthogonal
+    # https://math.stackexchange.com/questions/32600/whats-the-opposite-of-a-cross-product
     m = np.cross( mag_sat.B_body, torque )
 
     # normalize the magnetic moment so that we're just getting a direction without magnitude

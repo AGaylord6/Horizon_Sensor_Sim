@@ -15,7 +15,7 @@ DEGREES = False
 QUAT_INITIAL = np.array([1.0, 1.0, 0.0, 0.0])
 # we want to start with 15 degrees/s in each axis
 # VELOCITY_INITIAL = np.array([15.0,-10.0,10.0])
-VELOCITY_INITIAL = np.array([0.15, 0.0, 0.0])
+VELOCITY_INITIAL = np.array([0.1, 0.0, 0.0])
 # convert to rad/s
 if not DEGREES:
     VELOCITY_INITIAL *= math.pi / 180
