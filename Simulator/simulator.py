@@ -241,6 +241,28 @@ class Simulator():
         '''
         self.mag_sat.cam1.roll, self.mag_sat.cam1.pitch, self.mag_sat.cam1.alpha, self.mag_sat.cam1.edges = processImage(image1)
         self.mag_sat.cam2.roll, self.mag_sat.cam2.pitch, self.mag_sat.cam2.alpha, self.mag_sat.cam2.edges = processImage(image2)
+
+        # # if we don't see horizon, differentiate between seeing all earth and all space
+        # if self.mag_sat.cam1.roll == -1:
+        #     if self.mag_sat.cam1_alpha_increasing:
+        #         # if the last few images saw increasingly more earth, we assume we're now seeing all earth
+        #         self.mag_sat.cam1.alpha = 1.0
+        #     else:
+        #         # if we were seeing less and less earth, assume we're seeing space now
+        #         self.mag_sat.cam1.alpha = 0.0
+        
+        # # same for cam2
+        # if self.mag_sat.cam2.roll == -1:
+        #     if self.mag_sat.cam2_alpha_increasing:
+        #         # if the last few images saw increasingly more earth, we assume we're now seeing all earth
+        #         self.mag_sat.cam2.alpha = 1.0
+        #     else:
+        #         # if we were seeing less and less earth, assume we're seeing space now
+        #         self.mag_sat.cam2.alpha = 0.0
+
+        # # after checking if we don't see horizon, update our history of alpha's seen
+        # self.mag_sat.updateAlphaReadings()
+        
         # for loop that controls how many in advance we need to save
         # ex: if we're simulating every other cam, set same measurements for next time step
         for a in range(4):
