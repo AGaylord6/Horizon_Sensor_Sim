@@ -40,6 +40,8 @@ Edit params.py and nadir_point.py in VSCode to change simulation parameters/cont
 
 Rendered images are created in project folder -> images
     For example, C:\Users\agaylord\Desktop\IrishSat_Simulator\images
+To change clip speed in DaVinci resolve while stitching together images:
+    "DaVinci resolve" tab => preferences => user => editing => standard still duration
 
 '''
 
@@ -451,6 +453,9 @@ def main(oe):
         # don't change top/bottom to keep 110 FOV
         mc.setAttr("defaultRenderGlobals.bottomRegion", 0)
         mc.setAttr("defaultRenderGlobals.topRegion", pic_height-1)
+    else:
+        # undo cropping for when we want non-ir or square pics
+        mc.setAttr("defaultRenderGlobals.useRenderRegion", 0)
 
     if SIMULATING:
         # create 3 Magnetorquer objects to store in Magnetorquer_Sat object
@@ -481,11 +486,11 @@ def main(oe):
             # generate fake sensor data in body frame based on ideal guess
             sim.generateData_step(ideal_state, i)
 
-            if not cubes_path_no_cams and i % 4 == 0: # i % pic_interval == 0 and 
+            if not cubes_path_no_cams and i % PIC_INTERVAL == 0: # i % pic_interval == 0 and 
                 # generate ehs, render image, and fetch from dir
                 image1, image2 = create_two_cams(element, ideal_state[:4], output_dir)
 
-                if render_images: 
+                if render_images and IR_cam: 
                     # process our images and store results in mag_sat
                     sim.process_images(image1, image2, i)
 

@@ -307,7 +307,7 @@ class Simulator():
                         self.energy = self.energy + self.totalPower[step]*self.dt
                 
                 # move to horizon searching protocol
-                return "search"
+                return "detumble"
 
             return "detumble"
 
@@ -357,7 +357,7 @@ class Simulator():
             self.mode[i] = -1
         elif self.mag_sat.state == "point":
             # process images and try to center cams
-            if i % 4 == 0:
+            if i % PIC_INTERVAL == 0:
                 # only take an image every other timestep
                 # get voltage output and what mode we're in based on image results
                 self.voltages[i], self.mode[i] = nadir_point(self.mag_sat)

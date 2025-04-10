@@ -15,14 +15,14 @@ DEGREES = False
 QUAT_INITIAL = np.array([1.0, 1.0, 0.0, 0.0])
 # we want to start with 15 degrees/s in each axis
 # VELOCITY_INITIAL = np.array([15.0,-10.0,10.0])
-VELOCITY_INITIAL = np.array([0.1, 0.0, 0.0])
+VELOCITY_INITIAL = np.array([0.0, 0.0, 0.0])
 # convert to rad/s
 if not DEGREES:
     VELOCITY_INITIAL *= math.pi / 180
 VOLTAGES_INITIAL = np.array([0.0, 0.0, 0.0])
 CURRENTS_INITIAL = np.array([0.0, 0.0, 0.0])
 RW_INITIAL = np.array([0.0, 0.0, 0.0, 0.0])
-STARTING_PROTOCOL = "search" # "detumble", "search", "point"
+STARTING_PROTOCOL = "detumble" # "detumble", "search", "point"
 
 # ============  ORBITAL DYNAMICS  ==================================================
 
@@ -31,7 +31,8 @@ EARTH_RADIUS = 6378
 # see generate_orbit_data in sol_sim.py for more 
 # this gives us near-polar, sun-synchronous LEO orbit (according to chatGPT)
 # ORBITAL_ELEMENTS = np.array([0, 6800, 0.0000922, 97.5, 150, 0])
-ORBITAL_ELEMENTS = [90, EARTH_RADIUS + 450, 0.0000922, 90, 90, 0]
+# ORBITAL_ELEMENTS = [90, EARTH_RADIUS + 450, 0.0000922, 90, 90, 0]
+ORBITAL_ELEMENTS = np.array([0, EARTH_RADIUS + 450, 0.0000922, 110, 150, 0])
 
 # standard gravitational parameter for earth (m^3/s^2)
 GRAVITY_EARTH = 3.986004418e14
@@ -49,7 +50,7 @@ CONSTANT_B_FIELD_MAG = np.array([19.42900375, 1.74830615, 49.13746833])
 
 # total time to run sim (unrounded hours)
 # HOURS = ORBITAL_PERIOD / 3600
-HOURS = 10 / 3600
+HOURS = 20 / 3600
 print("simulation time: ", HOURS, "hours")
 # total time to run sim (seconds)
 TF = int(HOURS * 3600)
@@ -74,7 +75,7 @@ CSV_FILE = "1_orbit_half_second" # .5 dt
 CONSTANT_B_FIELD = False
 RW_OFF = True
 SENSOR_NOISE = True
-STANDSTILL = True # keep satellite in same position around the earth
+STANDSTILL = False # keep satellite in same position around the earth
 # 0 = only create pdf output, 1 = show 3D animation visualization, 2 = both, 3 = none
 RESULT = 0
 OUTPUT_DIR = "plotOutput"
@@ -91,6 +92,8 @@ GYRO_WORKING = True
 
 # whether to run physics simulator or not
 SIMULATING = True
+# how often we want to take pic (4 = every 4 timesteps)
+PIC_INTERVAL = 4
 # option to only highlight orbit path with new cams + images
 cubes_path_no_cams = False
 render_images = True
@@ -106,15 +109,18 @@ pic_interval = int(HOURS * 3600 / DT / pic_count)
 if IR_cam:
     pic_width = 24
     pic_height = 32
+    # sensor width (in mm) and desired FOV
+    cam_FOV_vertical = 110.0
+    cam_FOV_horizontal = 70
 else:
     # settings for higher quality color cam
     pic_width = 512
     pic_height = 512
-# sensor width (in mm) and desired FOV
-cam_FOV_vertical = 110.0
-cam_FOV_horizontal = 70
+    cam_FOV_vertical = 90.0
+    cam_FOV_horizontal = 90.0
 sensor_width = 25.8
 sensor_height = 17.8 
+
 # angle at which our cams are mounted (degrees)
 # with respect to axis want to nadir point
 cam_mount_angle = 30
