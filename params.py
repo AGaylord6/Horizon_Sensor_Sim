@@ -114,6 +114,7 @@ if IR_cam:
     cam_FOV_horizontal = 70
 else:
     # settings for higher quality color cam
+    # TODO: fix cropping/distortion issue with square pics
     pic_width = 512
     pic_height = 512
     cam_FOV_vertical = 90.0
